@@ -3,14 +3,159 @@
 //
 
 #include "Option.h"
-#include <math.h>
+#include <cmath.h>
 #include <boost/math/distributions/exponential.hpp>
 #include <boost/math/distributions/normal.hpp>
 #include <iostream>
+#include <numeric>
 
 using namespace std;
+Call::Call(double interesAnual, double strike, double spot, double sigma, double tau):
+        interesAnual(interesAnual),strike(strike),spot(spot),sigma(sigma),tau(tau), griegas(call,interesAnual,strike,spot,sigma,tau)
+        {
+            factorDescuento = exp(-interesAnual*tau);
+            forward = spot/factorDescuento;
+        }
+Greeks::Greeks(const Greeks &p) : tipo(call),interesAnual(interesAnual),strike(strike),spot(spot),sigma(sigma),tau(tau),factorDescuento(factorDescuento),forward(forward) {}
 
-Option::Option(optionType tipo, double interesAnual, double strike, double spot, double sigma, double tau):
+Put::Put(double interesAnual, double strike, double spot, double sigma, double tau):
+        interesAnual(interesAnual),strike(strike),spot(spot),sigma(sigma),tau(tau),griegas(put,interesAnual,strike,spot,sigma,tau)
+            {
+            factorDescuento = exp(-interesAnual*tau);
+            forward = spot/factorDescuento;
+            }
+
+Greeks::Greeks(optionType tipo,double interesAnual, double strike, double spot, double sigma, double tau):
+        tipo(tipo),interesAnual(interesAnual),strike(strike),spot(spot),sigma(sigma),tau(tau)
+        {
+            factorDescuento = exp(-interesAnual*tau);
+            forward = spot/factorDescuento;
+        };
+
+double Call::evaluate(vector<double> values){
+    double price{};
+    price = max(values.back() - strike,0.0);
+    cout<<"evaluate Call"<<endl;
+    cout<<price<<endl;
+    return price;
+};
+
+double Put::evaluate(vector<double> values){
+    double price{};
+    price =  max(strike - values.back(),0.0);
+    cout<<"evaluate Put"<<endl;
+    cout<<price<<endl;
+    return price;
+};
+
+/*vector<double> Asian::valuesAsian(vector<double> values){
+    auto it = max_element(values.begin(),values.end());
+    vector<double> result;
+    result.push_back(*it);
+    return result;
+};*/
+
+double Asian::evaluate(vector<double> values){
+    double v{};
+    vector<double> result;
+    if(tipo == max_){
+        auto it = max_element(values.begin(),values.end());
+        result.push_back(*it);
+    }else if(tipo == min_){
+        auto it = min_element(values.begin(),values.end());
+        result.push_back(*it);
+    }else if(tipo == avg_){
+        v = accumulate(values.begin(),values.end(),0.0)/values.size();
+        result.push_back(v);
+    }else{
+        cout<<"ERROR"<<endl;
+    }
+
+    v=innerOption->evaluate(result);
+    //Decorator::evaluate(values);
+    return v;
+};
+
+
+double Greeks::delta(){
+    double delta{};
+    double dplus{};
+    double logFK = log(forward/strike);
+    double inverseSigma = 1 / (sigma * sqrt(tau));
+    double medioSigma = 0.5 * sigma*sigma*tau;
+    dplus = inverseSigma*(logFK + medioSigma);
+    boost::math::normal normalDistribution;
+    delta = boost::math::cdf(normalDistribution,dplus);
+    switch (tipo){
+        case call:
+            break;
+        case put:
+            delta = delta -1;
+            break;
+        default:
+            cout<<"Error"<<endl;
+            break;
+    }
+    return delta;
+
+}
+
+double Greeks::vega(){
+    double vega{};
+    double dplus{};
+    double logFK = log(forward/strike);
+    double inverseSigma = 1 / (sigma * sqrt(tau));
+    double medioSigma = 0.5 * sigma*sigma*tau;
+    dplus = inverseSigma*(logFK + medioSigma);
+
+    double spotSqrTau = spot*sqrt(tau);
+    double distribucionPrima = (1/(sqrt(2*M_PI)))*exp(-(dplus*dplus)/2);
+    vega = spotSqrTau*distribucionPrima;
+    return vega;
+}
+
+
+
+double Greeks::theta(){
+    double theta{};
+    double dplus{};
+    double dminus{};
+    double logFK = log(forward/strike);
+    double inverseSigma = 1 / (sigma * sqrt(tau));
+    double medioSigma = 0.5 * sigma*sigma*tau;
+
+    dplus = inverseSigma*(logFK + medioSigma);
+    double distribucionPrima = (1/(sqrt(2*M_PI)))*exp(-(dplus*dplus)/2);
+
+
+    dminus = inverseSigma*(logFK - medioSigma);
+
+    boost::math::normal normalDistribution;
+    double distribucionMinus{};
+    switch (tipo){
+        case call:
+            distribucionMinus =  boost::math::cdf(normalDistribution,dminus);
+            //cout<<"Call Distribucion Minus: "<< distribucionMinus<<endl;
+            //normalCDF(dminus);
+            theta = -(spot*distribucionPrima*sigma)/(2*sqrt(tau)) - (interesAnual*strike*exp(-interesAnual*tau)*(distribucionMinus));
+            break;
+        case put:
+            distribucionMinus =  boost::math::cdf(normalDistribution,-dminus);
+            //cout<<" Put Distribucion Minus: "<< distribucionMinus<<endl;
+            //normalCDF(-dminus);
+            //CFD(-dminus);
+            theta = -((spot*distribucionPrima*sigma)/(2*sqrt(tau))) + (interesAnual*strike*exp(-interesAnual*tau)*(distribucionMinus));
+            break;
+        default:
+            cout<<"Error"<<endl;
+            theta = -11111111;
+            break;
+    }
+    return theta;
+}
+
+
+/*Option::Option(optionType tipo, double interesAnual, double strike, double spot, double sigma, double tau):
         tipo(tipo),interesAnual(interesAnual),strike(strike),spot(spot),sigma(sigma),tau(tau){
 
         factorDescuento = exp(-interesAnual*tau);
@@ -141,7 +286,7 @@ double Option::price(){
     cout<<"distribucionPlus"<< distribucionPlus<<endl;
     cout<<"distribucionMinus"<< distribucionMinus<<endl;
     cout<<"negDistribucionPlus"<< negDistribucionPlus<<endl;
-    cout<<"negDistribucionMinus"<< negDistribucionMinus<<endl;*/
+    cout<<"negDistribucionMinus"<< negDistribucionMinus<<endl;
 
     double result{};
 
@@ -165,56 +310,4 @@ double Asian::evaluate() {
     return 5.0;
 }
 
-/*
- *  double interesAnual, double strike, double spot, double sigma, double tau
- adouble Option::sensibilites(const adouble x[5]){
-
-    double dplus{};
-    double dminus{};
-    double factorDescuento1 = exp(-x[0]*x[4]);
-    double forward1 = x[2]/factorDescuento1;
-    double sigma_sqr = x[3]*x[3];
-    double inverseSigma = 1 / (x[3] * sqrt(x[4]));
-    double logFK = log(forward/x[1]);
-    double medioSigma = 0.5 * sigma_sqr*x[4];
-
-    boost::math::normal normalDistribution;
-
-    dplus = inverseSigma*(logFK + medioSigma);
-    dminus = inverseSigma*(logFK - medioSigma);
-
-    auto distribucionPlus = boost::math::cdf(normalDistribution,dplus);
-    auto distribucionMinus = boost::math::cdf(normalDistribution,dminus);
-    auto negDistribucionPlus = boost::math::cdf(normalDistribution,-dplus);
-    auto negDistribucionMinus = boost::math::cdf(normalDistribution,-dminus);
-
-    cout<<"factorDescuento"<< factorDescuento<<endl;
-    cout<<"inverseSigma"<< inverseSigma<<endl;
-    cout<<"logFK"<< logFK<<endl;
-    cout<<"medioSigma"<< medioSigma<<endl;
-    cout<<"dplus"<< dplus<<endl;
-    cout<<"dminus"<< dminus<<endl;
-    cout<<"distribucionPlus"<< distribucionPlus<<endl;
-    cout<<"distribucionMinus"<< distribucionMinus<<endl;
-    cout<<"negDistribucionPlus"<< negDistribucionPlus<<endl;
-    cout<<"negDistribucionMinus"<< negDistribucionMinus<<endl;
-
-adouble result{};
-
-    switch (tipo){
-        case call:
-            result = factorDescuento1 * ((distribucionPlus * forward1) - (distribucionMinus * x[1]));
-            break;
-        case put:
-            result = factorDescuento1 * ((negDistribucionMinus * x[1]) - (negDistribucionPlus * forward1));
-            break;
-        default:
-            cout<<"Error"<<endl;
-            result = -11111111;
-            break;
-    }
-    cout<<result<<endl;
-    return result;
-
-}
- */
+*/

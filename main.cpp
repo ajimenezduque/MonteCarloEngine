@@ -5,22 +5,25 @@
 #include "Option.h"
 
 using namespace std;
-/*adouble algorithm_tfm(const adouble x[5]) {
 
-    // adouble z = x[0]*x[1] + sin(x[0]);
-    adouble z = log(x[0]) +  x[0]*x[1] - sin(x[1]);
-    return z;
-}*/
 //pasar clase instrumento
-double SimpleMonteCarlo2( double Expiry,//puntero clase tipo instrumento
-                          double Strike,
-                          double Spot,
-                          double Vol,
-                          double r,
+//montecarlo input vector de opciones
+//double Spot,//dato de mercado dejar como input
+//                          double Vol,//input
+//                          double r,//input
+//                          unsigned long NumberOfPaths,
+//                          unsigned long NumberOfSamples
+
+
+double SimpleMonteCarlo2(Composite  myOptions,                     //double Expiry,//puntero clase tipo Option, añadir metedo getExpiry
+                          //double Strike,//call y put
+                          double Expiry,
+                          double Spot,//dato de mercado dejar como input
+                          double Vol,//input
+                          double r,//input
                           unsigned long NumberOfPaths,
                           unsigned long NumberOfSamples)
 {
-    // create a mersenne_twister generator
 
     /*
     // use this construction for a real random generator
@@ -41,14 +44,12 @@ double SimpleMonteCarlo2( double Expiry,//puntero clase tipo instrumento
     // vector size =  NumberOfSamples + Spot
     std::vector<double> underlying_values(NumberOfSamples + 1, Spot);
 
-
     auto variance = Vol * Vol ;
     auto rootVariance = std::sqrt(variance * dt);
 
     auto movedSpotFactor = std::exp((r - (0.5 * variance))*dt);
 
     double runningSum = 0.0;
-
     for (unsigned long i = 0; i < NumberOfPaths; i++)
     {
         for (unsigned long j = 1; j < underlying_values.size(); j++)
@@ -58,16 +59,20 @@ double SimpleMonteCarlo2( double Expiry,//puntero clase tipo instrumento
             auto drift = underlying_values[j-1] * movedSpotFactor;
             underlying_values[j] = drift * diffusion;
         }
-
         //pasar valor maximo, media etc cualquier payoff que se ocurra
         //añadir funcion evalue
-        auto exerciseValue = underlying_values.back();
-        auto thisPayoff = std::max(exerciseValue - Strike, 0.0);
+        //auto exerciseValue = underlying_values.back();
+        double thisPayoff{};
+        //controlar para put
+        //llamar al evaluate de la opcion->evaluate()
+
+                //cout<<myOptions.evaluate(underlying_values)<<endl;
+        thisPayoff=myOptions.evaluate(underlying_values);
+             //thisPayoff = std::max(exerciseValue - Strike, 0.0);
         runningSum += thisPayoff;
     }
 
     auto mean = runningSum / NumberOfPaths;
-
     mean *= exp(-r*Expiry);
 
     return mean;
@@ -75,20 +80,64 @@ double SimpleMonteCarlo2( double Expiry,//puntero clase tipo instrumento
 int main() {
    // optionType tipo, double interesAnual, double strike, double spot, double sigma, double tau
 
+    Call option1 (0.08,300.0,305.0,0.25,(4.0/12.0));
+    Put option2 (0.08,300.0,305.0,0.25,(4.0/12.0));
+    Call  optionDelta(0.01,100.0,100.00001,0.5,4);
+   // Asian asiatica(0.01,100.0,100.00001,0.5,4);
+    vector<double> vec1 {1.0,2.0,380.0};
+   // cout<<optionDelta.evaluate(vec)<<endl;
 
-    Option option1 (call,0.08,300.0,305.0,0.25,(4.0/12.0));
-    Option option2 (put,0.08,300.0,305.0,0.25,(4.0/12.0));
-    Option  optionDelta(call,0.01,100.0,100.00001,0.5,4);
-    /*Asian a;
-    std::shared_ptr<Instrumento> p = std::make_shared<Option>(option1);
-    std::shared_ptr<Instrumento> p1 = std::make_shared<Option>(option1);
-    std::shared_ptr<Instrumento> p2 = std::make_shared<Asian>(a);
+    Asian * callAsiatica = new Asian(avg_,new Call(0.08,300.0,305.0,0.25,(4.0/12.0)));
+    Call *optionCall1 = new Call(0.08,300.0,305.0,0.25,(4.0/12.0));
+
+    Call *optionCallDelta = new Call(0.01,100.0,100.00001,0.5,4);
+    Put *optionPut2 = new Put(0.08,300.0,305.0,0.25,(4.0/12.0));
+
+
+//std::auto_ptr<Option> myOption = *callAsiatica;
+Composite myOptions;
+//cout<<callAsiatica->evaluate(vec1)<<endl;
+    myOptions.add(callAsiatica);
+    myOptions.add(&option2);
+    myOptions.add(&option1);
+    myOptions.add(&optionDelta);
+
+    double res = myOptions.evaluate(vec1);
+    //cout<<myOptions.evaluate(vec1)<<endl;
+    //cout<<res<<endl;
+    //auto_ptr<Composite> my_options = &myOptions;
+    //my_options->evaluate(vec1);
+
+    //double resultMC = SimpleMonteCarlo2(myOptions,4,300,0.25,0.08,100000,10000);
+
+    //cout<<resultMC<<endl;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  /*  Asian a;
+    std::shared_ptr<Option> p = std::make_shared<Call>(option1);
+    std::shared_ptr<Option> p1 = std::make_shared<Put>(option2);
+    std::shared_ptr<Option> p2 = std::make_shared<Asian>(a);
     Composite vec;
     vec.add(p);
     vec.add(p1);
     vec.add(p2);
     cout<<"Evaluate"<<endl;
-    cout<<vec.evaluate()<<endl;*/
+    cout<<vec.evaluate()<<endl;
 
     double result = option1.price();
     cout<<"OptionDelta Delta:"<<optionDelta.delta()<<endl;
@@ -106,8 +155,9 @@ cout<<endl;
     cout<<"OptionTheta Theta: "<<option2.theta()/365<<endl;
     std::cout << "Price: " << option2.price() << std::endl;
     cout<<endl;
-  //  double resultMC = SimpleMonteCarlo2(option1.tau,option1.strike,option1.spot,option1.sigma,option1.interesAnual,100000,10000);
-    std::cout << "Price: " << result << std::endl;
-  //  std::cout << "Montecarlo:" << resultMC << std::endl;
+
+    double resultMC = SimpleMonteCarlo2(optionDelta.tau,optionDelta.strike,optionDelta.spot,optionDelta.sigma,optionDelta.interesAnual,100000,10000);
+
+    std::cout << "Montecarlo:" << resultMC << std::endl;*/
     return 0;
 }
