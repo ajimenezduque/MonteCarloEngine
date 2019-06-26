@@ -43,6 +43,7 @@ public:
     }
 
     virtual double evaluate(vector<double> values) = 0;
+    virtual double getExpiry() = 0;
 };
 
 class Decorator: public Option{
@@ -54,6 +55,9 @@ public:
     double evaluate(vector<double> values){
         innerOption->evaluate(values);
     };
+    double getExpiry(){
+        innerOption->getExpiry();
+    }
 };
 
 
@@ -64,9 +68,10 @@ public:
   /*  void add (shared_ptr<Option> elem){
         vectorInst.push_back(elem);
     }*/
-  void add (Option *elem){
-      vectorInst.push_back(elem);
-  }
+
+    void add (Option *elem){
+          vectorInst.push_back(elem);
+    }
 
     void remove( const unsigned int index )
     {
@@ -77,16 +82,21 @@ public:
 
     int compSize(){
       return vectorInst.size();
-  }
+    }
 
-  Option *getOption (int n){
+    Option *getOption (int n){
       auto elem = vectorInst[n];
       return elem;
-  }
+    }
 
     double evaluate(vector<double> values){
         for(auto element : vectorInst){
         element->evaluate(values);
+        }
+    }
+    double getExpiry(){
+        for(auto element : vectorInst){
+            element->getExpiry();
         }
     }
     //implementar getMaturity
@@ -114,6 +124,7 @@ public:
     double theta();
     double delta();
     double evaluate(vector<double> values);
+    double getExpiry();
 };
 
 
@@ -138,10 +149,12 @@ public:
     double theta();
     double delta();
     double evaluate(vector<double> values);
+    double getExpiry();
 };
 class Asian: public Decorator{
 public:
     asianType tipo;
+
     Asian(double interesAnual,double strike, double spot, double sigma, double tau);
 
     Asian(asianType tipo,Call *optionCall):tipo(tipo),Decorator(optionCall){}
@@ -149,7 +162,18 @@ public:
     Asian(asianType tipo,Put *optionPut):tipo(tipo),Decorator(optionPut){}
 
     double evaluate(vector<double> values);
+    double getExpiry();
 };
+
+
+
+
+
+
+
+
+
+
 
 
 /*class Instrumento{

@@ -14,8 +14,8 @@ using namespace std;
 //                          unsigned long NumberOfPaths,
 //                          unsigned long NumberOfSamples
 
-
-double SimpleMonteCarlo2(Composite  myOptions,                     //double Expiry,//puntero clase tipo Option, añadir metedo getExpiry
+//Spot, volatilidad y interes dependen del momento actual por lo que son inputs montcarlo
+vector<double> SimpleMonteCarlo2(Composite  myOptions,                     //double Expiry,//puntero clase tipo Option, añadir metedo getExpiry
                           //double Strike,//call y put
                           double Expiry,
                           double Spot,//dato de mercado dejar como input
@@ -49,7 +49,8 @@ double SimpleMonteCarlo2(Composite  myOptions,                     //double Expi
 
     auto movedSpotFactor = std::exp((r - (0.5 * variance))*dt);
 
-    double runningSum = 0.0;
+    //double runningSum = 0.0;
+    vector<double> runningSum (myOptions.compSize(),0.0);
     for (unsigned long i = 0; i < NumberOfPaths; i++)
     {
         for (unsigned long j = 1; j < underlying_values.size(); j++)
@@ -62,52 +63,59 @@ double SimpleMonteCarlo2(Composite  myOptions,                     //double Expi
         //pasar valor maximo, media etc cualquier payoff que se ocurra
         //añadir funcion evalue
         //auto exerciseValue = underlying_values.back();
-        double thisPayoff{};
-        //controlar para put
+        //double thisPayoff{};
         //llamar al evaluate de la opcion->evaluate()
 
-                //cout<<myOptions.evaluate(underlying_values)<<endl;
-
-        thisPayoff=myOptions.evaluate(underlying_values);
+       vector <double> thisPayoff (myOptions.compSize(),0.0);
+        for(int i=0;i<myOptions.compSize();++i){
+            thisPayoff[i]=myOptions.getOption(i)->evaluate(underlying_values);
+        }
+        //thisPayoff=myOptions.evaluate(underlying_values);
         //
              //thisPayoff = std::max(exerciseValue - Strike, 0.0);
-        runningSum += thisPayoff;
+         for(int i=0;i<myOptions.compSize();++i){
+             runningSum[i] += thisPayoff[i];
+         }
+
     }
 
-    auto mean = runningSum / NumberOfPaths;
-    mean *= exp(-r*Expiry);
+    vector<double> mean(myOptions.compSize(),0.0);
+    for (int i=0;i<myOptions.compSize();++i){
+        mean[i] = runningSum[i] / NumberOfPaths;
+        mean[i] *= exp(-r * myOptions.getOption(i)->getExpiry());
+    }
+    //auto mean = runningSum / NumberOfPaths;
+   // mean *= exp(-r*Expiry);
 
     return mean;
 }
 int main() {
    // optionType tipo, double interesAnual, double strike, double spot, double sigma, double tau
 
-    Call option1 (0.08,300.0,305.0,0.25,(4.0/12.0));
-    Put option2 (0.08,300.0,305.0,0.25,(4.0/12.0));
-    Call  optionDelta(0.01,100.0,100.00001,0.5,4);
-   // Asian asiatica(0.01,100.0,100.00001,0.5,4);
-    vector<double> vec1 {1.0,2.0,380.0};
+    // Asian asiatica(0.01,100.0,100.00001,0.5,4);
+   // vector<double> vec1 {1.0,2.0,380.0};
    // cout<<optionDelta.evaluate(vec)<<endl;
 
-    Asian * callAsiatica = new Asian(avg_,new Call(0.08,300.0,305.0,0.25,(4.0/12.0)));
-    Call *optionCall1 = new Call(0.08,300.0,305.0,0.25,(4.0/12.0));
 
+   /* Call *optionCall1 = new Call(0.08,300.0,305.0,0.25,(4.0/12.0));
     Call *optionCallDelta = new Call(0.01,100.0,100.00001,0.5,4);
-    Put *optionPut2 = new Put(0.08,300.0,305.0,0.25,(4.0/12.0));
+    Put *optionPut2 = new Put(0.08,300.0,305.0,0.25,(4.0/12.0));*/
 
+    Call option1 (0.08,300.0,305.0,0.25,(4.0/12.0));
+    Put option2 (0.08,300.0,305.0,0.25,(4.0/12.0));
+    Call  optionDelta(0.01,100.0,305.0,0.25,4);
+    Asian * callAsiatica = new Asian(avg_,new Call(0.08,300.0,305.0,0.25,(4.0/12.0)));
 
-//std::auto_ptr<Option> myOption = *callAsiatica;
-Composite myOptions;
-//cout<<callAsiatica->evaluate(vec1)<<endl;
+    Composite myOptions;
     myOptions.add(callAsiatica);
     myOptions.add(&option2);
     myOptions.add(&option1);
     myOptions.add(&optionDelta);
-    myOptions.evaluate(vec1);
-    cout<<myOptions.compSize()<<endl;
-    myOptions.remove(0);
-    myOptions.evaluate(vec1);
-    cout<<myOptions.compSize()<<endl;
+
+                                                //composite,tau,spot,sigma,interes,paths, samples
+    vector <double> result = SimpleMonteCarlo2(myOptions,4,305.0,0.333333,0.08,100000,100000);
+    std::for_each(result.begin(), result.end(),   [](const double& i) { std::cout << "Result: " << i<<endl;});
+
     //auto o = myOptions.getOption(2);
     //o->evaluate(vec1);
     //double res = myOptions.evaluate(vec1);

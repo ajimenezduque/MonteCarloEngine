@@ -35,16 +35,16 @@ Greeks::Greeks(optionType tipo,double interesAnual, double strike, double spot, 
 double Call::evaluate(vector<double> values){
     double price{};
     price = max(values.back() - strike,0.0);
-    cout<<"evaluate Call"<<endl;
-    cout<<price<<endl;
+   // cout<<"evaluate Call"<<endl;
+   // cout<<price<<endl;
     return price;
 };
 
 double Put::evaluate(vector<double> values){
     double price{};
     price =  max(strike - values.back(),0.0);
-    cout<<"evaluate Put"<<endl;
-    cout<<price<<endl;
+    //cout<<"evaluate Put"<<endl;
+    //cout<<price<<endl;
     return price;
 };
 
@@ -54,21 +54,33 @@ double Put::evaluate(vector<double> values){
     result.push_back(*it);
     return result;
 };*/
-
+double Put::getExpiry(){
+    return this->tau;
+}
+double Call::getExpiry() {
+    return this->tau;
+}
+double Asian::getExpiry(){
+    return innerOption->getExpiry();
+}
 double Asian::evaluate(vector<double> values){
     double v{};
     vector<double> result;
-    if(tipo == max_){
-        auto it = max_element(values.begin(),values.end());
-        result.push_back(*it);
-    }else if(tipo == min_){
-        auto it = min_element(values.begin(),values.end());
-        result.push_back(*it);
-    }else if(tipo == avg_){
-        v = accumulate(values.begin(),values.end(),0.0)/values.size();
-        result.push_back(v);
+    if(!values.empty()) {
+        if (tipo == max_) {
+            auto it = max_element(values.begin(), values.end());
+            result.push_back(*it);
+        } else if (tipo == min_) {
+            auto it = min_element(values.begin(), values.end());
+            result.push_back(*it);
+        } else if (tipo == avg_) {
+            v = accumulate(values.begin(), values.end(), 0.0) / values.size();
+            result.push_back(v);
+        } else {
+            cout << "ERROR" << endl;
+        }
     }else{
-        cout<<"ERROR"<<endl;
+        cout << "VectorValues vacio" << endl;
     }
 
     v=innerOption->evaluate(result);
