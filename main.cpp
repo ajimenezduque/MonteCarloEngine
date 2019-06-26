@@ -90,32 +90,40 @@ vector<double> SimpleMonteCarlo2(Composite  myOptions,                     //dou
     return mean;
 }
 int main() {
-   // optionType tipo, double interesAnual, double strike, double spot, double sigma, double tau
-
-    // Asian asiatica(0.01,100.0,100.00001,0.5,4);
-   // vector<double> vec1 {1.0,2.0,380.0};
-   // cout<<optionDelta.evaluate(vec)<<endl;
 
 
-   /* Call *optionCall1 = new Call(0.08,300.0,305.0,0.25,(4.0/12.0));
-    Call *optionCallDelta = new Call(0.01,100.0,100.00001,0.5,4);
-    Put *optionPut2 = new Put(0.08,300.0,305.0,0.25,(4.0/12.0));*/
-
-    Call option1 (0.08,300.0,305.0,0.25,(4.0/12.0));
-    Put option2 (0.08,300.0,305.0,0.25,(4.0/12.0));
-    Call  optionDelta(0.01,100.0,305.0,0.25,4);
-    Asian * callAsiatica = new Asian(avg_,new Call(0.08,300.0,305.0,0.25,(4.0/12.0)));
+    // double interesAnual, double strike, double spot, double sigma, double tau
+    Call option1 (0.08,300.0,305.0,0.25,1.5 );//Mismos parametros BSvalue =106.092 vs MC = 105.951 //Diferentes BSValue = 57.5697 MC = 129.409
+    Put option2 (0.08,300.0,305.0,0.25,2);//Mismos BSValue = 18.9369 vs MC = 18.8801//Dif BSValue = 19.3936 MC = 22.1561
+    Call  optionDelta(0.08,100.0,305.0,0.25,4);//BSValue = 232.429 vs MC = 232.343  //Dif BSValue =  232.429 MC = 232.343
+    Asian * callAsiatica = new Asian(avg_,new Call(0.08,300.0,305.0,0.25,4));
 
     Composite myOptions;
     myOptions.add(callAsiatica);
     myOptions.add(&option2);
     myOptions.add(&option1);
     myOptions.add(&optionDelta);
-
-                                                //composite,tau,spot,sigma,interes,paths, samples
-    vector <double> result = SimpleMonteCarlo2(myOptions,4,305.0,0.333333,0.08,100000,100000);
+                                           //composite,tau,spot,sigma,interes,paths, samples
+    vector <double> result = SimpleMonteCarlo2(myOptions,4,305.0,0.25,0.08,100000,100000);
     std::for_each(result.begin(), result.end(),   [](const double& i) { std::cout << "Result: " << i<<endl;});
 
+
+
+
+    /////*****************//////
+    ///****ELIMINAR*******/////
+
+
+    // optionType tipo, double interesAnual, double strike, double spot, double sigma, double tau
+
+    // Asian asiatica(0.01,100.0,100.00001,0.5,4);
+    // vector<double> vec1 {1.0,2.0,380.0};
+    // cout<<optionDelta.evaluate(vec)<<endl;
+
+
+    /* Call *optionCall1 = new Call(0.08,300.0,305.0,0.25,(4.0/12.0));
+     Call *optionCallDelta = new Call(0.01,100.0,100.00001,0.5,4);
+     Put *optionPut2 = new Put(0.08,300.0,305.0,0.25,(4.0/12.0));*/
     //auto o = myOptions.getOption(2);
     //o->evaluate(vec1);
     //double res = myOptions.evaluate(vec1);
