@@ -67,7 +67,9 @@ double SimpleMonteCarlo2(Composite  myOptions,                     //double Expi
         //llamar al evaluate de la opcion->evaluate()
 
                 //cout<<myOptions.evaluate(underlying_values)<<endl;
+
         thisPayoff=myOptions.evaluate(underlying_values);
+        //
              //thisPayoff = std::max(exerciseValue - Strike, 0.0);
         runningSum += thisPayoff;
     }
@@ -101,9 +103,15 @@ Composite myOptions;
     myOptions.add(&option2);
     myOptions.add(&option1);
     myOptions.add(&optionDelta);
-
-    double res = myOptions.evaluate(vec1);
-    //cout<<myOptions.evaluate(vec1)<<endl;
+    myOptions.evaluate(vec1);
+    cout<<myOptions.compSize()<<endl;
+    myOptions.remove(0);
+    myOptions.evaluate(vec1);
+    cout<<myOptions.compSize()<<endl;
+    //auto o = myOptions.getOption(2);
+    //o->evaluate(vec1);
+    //double res = myOptions.evaluate(vec1);
+   // cout<<myOptions.evaluate(vec1)<<endl;
     //cout<<res<<endl;
     //auto_ptr<Composite> my_options = &myOptions;
     //my_options->evaluate(vec1);

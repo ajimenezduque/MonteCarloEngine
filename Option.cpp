@@ -3,7 +3,7 @@
 //
 
 #include "Option.h"
-#include <cmath.h>
+#include <cmath>
 #include <boost/math/distributions/exponential.hpp>
 #include <boost/math/distributions/normal.hpp>
 #include <iostream>

@@ -37,6 +37,11 @@ public:
 class Option{
 public:
     //Greeks griegas;
+    virtual Option *getOption( int )
+    {
+        return 0;
+    }
+
     virtual double evaluate(vector<double> values) = 0;
 };
 
@@ -61,6 +66,22 @@ public:
     }*/
   void add (Option *elem){
       vectorInst.push_back(elem);
+  }
+
+    void remove( const unsigned int index )
+    {
+        Option *child = vectorInst[ index ];
+        vectorInst.erase( vectorInst.begin() + index );
+        delete child;
+    }
+
+    int compSize(){
+      return vectorInst.size();
+  }
+
+  Option *getOption (int n){
+      auto elem = vectorInst[n];
+      return elem;
   }
 
     double evaluate(vector<double> values){
