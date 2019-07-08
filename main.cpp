@@ -39,7 +39,13 @@ vector<double> SimpleMonteCarlo2(Composite  myOptions,                     //dou
     std::normal_distribution<> nomalDistribution(0,1);
 
     // 365 muestras
-    double dt = Expiry/NumberOfSamples;
+    double maxExpiry = 0.0
+    for (int i=0;i<myOptions.compSize();++i){
+        maxExpiry = max(maxEpiry,myOptions.getOption(i)->getExpiry());
+    }
+
+    //double dt = Expiry/NumberOfSamples;
+    double dt = maxExpiry/NumberOfSamples;
 
     // vector size =  NumberOfSamples + Spot
     std::vector<double> underlying_values(NumberOfSamples + 1, Spot);

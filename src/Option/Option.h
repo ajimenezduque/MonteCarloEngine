@@ -12,6 +12,24 @@
  using namespace std;
 enum optionType { call, put };
 enum asianType {max_, min_, avg_};
+
+class OptionBS{
+public:
+    optionType tipo;
+    double interesAnual;
+    double strike;
+    double spot;
+    double sigma;
+    double tau;
+
+//variables intermedias
+    double forward;
+    double factorDescuento;
+
+    OptionBS(optionType tipo,double interesAnual, double strike, double spot, double sigma, double tau);
+    double price();
+};
+
 class Greeks{
 public:
     //variable de entrada
