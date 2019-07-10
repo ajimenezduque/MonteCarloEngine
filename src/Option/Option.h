@@ -7,7 +7,7 @@
 
 #include <boost/math/distributions/exponential.hpp>
 #include <boost/math/distributions/normal.hpp>
-#include<memory>
+#include <memory>
 
  using namespace std;
 enum optionType { call, put };

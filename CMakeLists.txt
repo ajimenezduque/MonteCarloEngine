@@ -9,6 +9,7 @@
 cmake_minimum_required(VERSION 3.5)
 project(MonteCarloEngine)
 
+
 # 1. Define some well-known folders:
 # - Place for compile binaries
 set(CMAKE_BINARY_DIR ${PROJECT_SOURCE_DIR}/build)
@@ -22,8 +23,6 @@ set (CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake-lib)
 
 # - set boost home
 SET (BOOST_ROOT /usr/include/boost)
-
-
 
 
 # Print some stuff

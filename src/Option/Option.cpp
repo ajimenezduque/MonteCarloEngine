@@ -89,7 +89,6 @@ double Asian::evaluate(vector<double> values){
     }else{
         cout << "VectorValues vacio" << endl;
     }
-
     v=innerOption->evaluate(result);
     //Decorator::evaluate(values);
     return v;
