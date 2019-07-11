@@ -5,7 +5,8 @@
 #define BOOST_TEST_MODULE pruebaOptions
 
 #include <boost/test/included/unit_test.hpp>
-#include "Option.h"
+
+#include "../Option.h"
 #include <iostream>
 #include <cmath>
 #include <cstdlib>

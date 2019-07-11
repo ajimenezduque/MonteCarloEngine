@@ -4,7 +4,8 @@
 #define BOOST_TEST_MODULE pruebaOptionGen
 
 #include <boost/test/included/unit_test.hpp>
-#include "OptionGen.h"
+#include <boost/test/included/unit_test_framework.hpp>
+#include "../OptionGen.h"
 #include <iostream>
 #include <cmath>
 #include <cstdlib>
