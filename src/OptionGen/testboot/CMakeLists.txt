@@ -1,1 +1,1 @@
-boost_test_project(NAME testOptionGen DEPS OptionGen)
+boost_test_project(NAME testOptionGen)

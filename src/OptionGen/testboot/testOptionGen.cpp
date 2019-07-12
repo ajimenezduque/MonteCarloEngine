@@ -1,6 +1,7 @@
 //
 // Created by alejandro on 10/07/19.
 //
+#define BOOST_TEST_MODULE pruebaOptionGen
 
 #include <boost/test/included/unit_test.hpp>
 #include "OptionGen.h"
@@ -9,12 +10,6 @@
 #include <cstdlib>
 #include <random>
 #include <chrono>
-
-//
-// Created by alejandro on 28/06/19.
-//
-
-#define BOOST_TEST_MODULE pruebaOptionGen
 
 
 using namespace std;
@@ -77,7 +72,9 @@ vector<double> SimpleMonteCarlo2(Composite<double>  myOptions,                  
         //llamar al evaluate de la opcion->evaluate()
 
         vector <double> thisPayoff (myOptions.compSize(),0.0);
+        //meter en composite
         for(int i=0;i<myOptions.compSize();++i){
+            //pasar criterio de evaluacion a evaluate
             thisPayoff[i]=myOptions.getOptionGen(i)->evaluate(underlying_values);
         }
         //thisPayoff=myOptions.evaluate(underlying_values);
@@ -88,7 +85,7 @@ vector<double> SimpleMonteCarlo2(Composite<double>  myOptions,                  
         }
 
     }
-
+    //mapa fecha, valor
     vector<double> mean(myOptions.compSize(),0.0);
     for (int i=0;i<myOptions.compSize();++i){
         mean[i] = runningSum[i] / NumberOfPaths;
@@ -151,6 +148,7 @@ BOOST_AUTO_TEST_CASE(Test_OptionGen){
     myOptions.add(&opcionCallVega1);
 
     auto start = std::chrono::high_resolution_clock::now();
+    //T,spot,sigma,interes,paths,samples
     vector<double> result = SimpleMonteCarlo2(myOptions,4.0,305,0.25,0.08,100000,365);
     auto end = std::chrono::high_resolution_clock::now();
 

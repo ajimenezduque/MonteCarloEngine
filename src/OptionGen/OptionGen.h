@@ -69,16 +69,18 @@ public:
         auto elem = vectorInst[n];
         return elem;
     }
-
+    //vector de pares<fecha,valor>
     T evaluate(vector<T> values){
         for(auto element : vectorInst){
             element->evaluate(values);
         }
     }
-    T getExpiry(){
-        for(auto element : vectorInst){
-            element->getExpiry();
+    T  getExpiry(){
+        double  maxExpiry = 0.0;
+        for (const auto element : vectorInst){
+            maxExpiry = max(maxExpiry,element->getExpiry());
         }
+        return maxExpiry;
     }
 
 };
@@ -206,8 +208,10 @@ public:
     Call();
     // double price(double interesAnual,double strike, double spot, double sigma, double tau);
 
+    //añadir frecuencia de muestreo
     T evaluate(vector<T> values){
         T price{};
+        //sacar valor coincidente en el tiempo
         price = max(values.back() - strike,0.0);
         return price;
     };

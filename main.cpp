@@ -14,8 +14,8 @@ using namespace std;
 //                          unsigned long NumberOfPaths,
 //                          unsigned long NumberOfSamples
 
-//Spot, volatilidad y interes dependen del momento actual por lo que son inputs montcarlo
-vector<double> SimpleMonteCarlo2(Composite  myOptions,                     //double Expiry,//puntero clase tipo Option, añadir metedo getExpiry
+//Spot, volatilidad e interes dependen del momento actual por lo que son inputs montcarlo
+vector<double> SimpleMonteCarlo2(Composite  myOptions,
                           //double Strike,//call y put
                           double Expiry,
                           double Spot,//dato de mercado dejar como input
@@ -41,7 +41,7 @@ vector<double> SimpleMonteCarlo2(Composite  myOptions,                     //dou
     // 365 muestras
     double maxExpiry = 0.0
     for (int i=0;i<myOptions.compSize();++i){
-        maxExpiry = max(maxEpiry,myOptions.getOption(i)->getExpiry());
+        maxExpiry = max(maxExpiry,myOptions.getOption(i)->getExpiry());
     }
 
     //double dt = Expiry/NumberOfSamples;
@@ -114,7 +114,7 @@ int main() {
     std::for_each(result.begin(), result.end(),   [](const double& i) { std::cout << "Result: " << i<<endl;});
 
 
-
+ 
 
     /////*****************//////
     ///****ELIMINAR*******/////
