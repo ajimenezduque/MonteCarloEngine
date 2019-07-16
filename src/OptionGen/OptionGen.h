@@ -22,19 +22,19 @@ public:
         return 0;
     }
 
-    virtual T evaluate(vector<T> values) = 0;
+    virtual vector<tuple<T,T>> evaluate(vector<T> values, T criteria) = 0;
     virtual T getExpiry() = 0;
 };
 
 template <typename T>
 class Decorator: public OptionGen<T>{
 public:
-    Decorator(OptionGen<T> * optionAbstract){
+    explicit Decorator (OptionGen<T> * optionAbstract){
         innerOption = optionAbstract;
     }
     OptionGen<T>* innerOption;
-    T evaluate(vector<T> values){
-        innerOption->evaluate(values);
+    T evaluate(vector<T> values, T criteria){
+        innerOption->evaluate(values,criteria);
     };
     T getExpiry(){
         innerOption->getExpiry();
@@ -70,11 +70,16 @@ public:
         return elem;
     }
     //vector de pares<fecha,valor>
-    T evaluate(vector<T> values){
+    vector <tuple<T,T>> evaluate(vector<T> values, T criteria){
+        vector<tuple<T,T>> result{};
         for(auto element : vectorInst){
-            element->evaluate(values);
+            //= element->evaluate(values, criteria);
+            vector<tuple<T,T>> result2 = element->evaluate(values, criteria);
+            result.push_back(make_tuple(get<0>(result2[0]),get<1>(result2[0])));
         }
+        return result;
     }
+
     T  getExpiry(){
         double  maxExpiry = 0.0;
         for (const auto element : vectorInst){
@@ -209,10 +214,13 @@ public:
     // double price(double interesAnual,double strike, double spot, double sigma, double tau);
 
     //añadir frecuencia de muestreo
-    T evaluate(vector<T> values){
-        T price{};
+    vector<tuple<T,T>> evaluate(vector<T> values, T criteria){
+        vector<tuple<T,T>> price{};
         //sacar valor coincidente en el tiempo
-        price = max(values.back() - strike,0.0);
+        //obtengo el valor a recuperar (tau*criteria)/maxExpiry
+        double posicion =getExpiry()*criteria;
+        //double posicion = (tau*criteria)/maxExpiry;
+        price.push_back(make_tuple(tau,max(values.at(posicion) - strike,0.0)));
         return price;
     };
     T getExpiry(){
@@ -243,9 +251,12 @@ public:
     }
     Put();
     //double price();
-    T evaluate(vector<T> values){
-        double price{};
-        price =  max(strike - values.back(),0.0);
+    vector<tuple<T,T>> evaluate(vector<T> values, T criteria){
+        vector<tuple<T,T>> price{};
+        double posicion =getExpiry()*criteria;
+        //obtengo el valor a recuperar (tau*criteria)/maxExpiry
+        //double posicion = (tau*criteria)/maxExpiry;
+        price.push_back(make_tuple(tau,max(strike - values.at(posicion),0.0)));
         return price;
     };
     T getExpiry(){
@@ -263,18 +274,20 @@ public:
 
     Asian(asianType tipo,Put<T> *optionPut):tipo(tipo),Decorator<T>(optionPut){}
 
-    T evaluate(vector<double> values){
+    T evaluate(vector<double> values, T criteria){
         double v{};
         vector<double> result;
+        //obtengo el valor a recuperar (tau*criteria)/maxExpiry
+        T posicion = (Decorator<T>::innerOption->getExpiry()*criteria);
         if(!values.empty()) {
             if (tipo == max_) {
-                auto it = max_element(values.begin(), values.end());
+                auto it = max_element(values.begin(), values.at(posicion));
                 result.push_back(*it);
             } else if (tipo == min_) {
-                auto it = min_element(values.begin(), values.end());
+                auto it = min_element(values.begin(), values.at(posicion));
                 result.push_back(*it);
             } else if (tipo == avg_) {
-                v = accumulate(values.begin(), values.end(), 0.0) / values.size();
+                v = accumulate(values.begin(), values.at(posicion), 0.0) / values.size();
                 result.push_back(v);
             } else {
                 // cout << "ERROR" << endl;
@@ -283,7 +296,7 @@ public:
             //cout << "VectorValues vacio" << endl;
         }
 
-        v=Decorator<T>::innerOption->evaluate(result);
+        v=Decorator<T>::innerOption->evaluate(result,criteria);
         //v=Decorator<T>::evaluate(values);
         return v;
     };

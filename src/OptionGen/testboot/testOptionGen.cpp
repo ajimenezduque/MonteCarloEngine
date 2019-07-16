@@ -4,7 +4,7 @@
 #define BOOST_TEST_MODULE pruebaOptionGen
 
 #include <boost/test/included/unit_test.hpp>
-#include <boost/test/included/unit_test_framework.hpp>
+//#include <boost/test/included/unit_test_framework.hpp>
 #include "../OptionGen.h"
 #include <iostream>
 #include <cmath>
@@ -15,9 +15,8 @@
 
 using namespace std;
 //Spot, volatilidad y interes dependen del momento actual por lo que son inputs montcarlo
-vector<double> SimpleMonteCarlo2(Composite<double>  myOptions,                     //double Expiry,//puntero clase tipo Option, añadir metedo getExpiry
-        //double Strike,//call y put
-                                 double Expiry,
+vector<tuple<double,double>> SimpleMonteCarlo2
+(Composite<double>  myOptions,                     //double Expiry,//puntero clase tipo Option, añadir metedo getExpiry
                                  double Spot,//dato de mercado dejar como input
                                  double Vol,//input
                                  double r,//input
@@ -38,13 +37,8 @@ vector<double> SimpleMonteCarlo2(Composite<double>  myOptions,                  
     // standard deviation affects the dispersion of generated values from the mean
     std::normal_distribution<> nomalDistribution(0,1);
 
-    // 365 muestras
-    double maxExpiry = 0.0;
-    for (int i=0;i<myOptions.compSize();++i){
-        maxExpiry = max(maxExpiry,myOptions.getOptionGen(i)->getExpiry());
-    }
+    double maxExpiry = myOptions.getExpiry();
 
-    //double dt = Expiry/NumberOfSamples;
     double dt = maxExpiry/NumberOfSamples;
 
     // vector size =  NumberOfSamples + Spot
@@ -55,8 +49,12 @@ vector<double> SimpleMonteCarlo2(Composite<double>  myOptions,                  
 
     auto movedSpotFactor = std::exp((r - (0.5 * variance))*dt);
 
-    //double runningSum = 0.0;
-    vector<double> runningSum (myOptions.compSize(),0.0);
+    //vector<double> runningSum (myOptions.compSize(),0.0);
+    vector <tuple <double,double> > runningSum;//(myOptions.compSize(),0.0);
+    for (int i = 0;i<myOptions.compSize();i++){
+        runningSum.emplace_back(make_pair(0.0,0.0));
+    }
+
     for (unsigned long i = 0; i < NumberOfPaths; i++)
     {
         for (unsigned long j = 1; j < underlying_values.size(); j++)
@@ -66,36 +64,31 @@ vector<double> SimpleMonteCarlo2(Composite<double>  myOptions,                  
             auto drift = underlying_values[j-1] * movedSpotFactor;
             underlying_values[j] = drift * diffusion;
         }
-        //pasar valor maximo, media etc cualquier payoff que se ocurra
-        //añadir funcion evalue
-        //auto exerciseValue = underlying_values.back();
-        //double thisPayoff{};
-        //llamar al evaluate de la opcion->evaluate()
 
-        vector <double> thisPayoff (myOptions.compSize(),0.0);
-        //meter en composite
-        for(int i=0;i<myOptions.compSize();++i){
-            //pasar criterio de evaluacion a evaluate
-            thisPayoff[i]=myOptions.getOptionGen(i)->evaluate(underlying_values);
-        }
-        //thisPayoff=myOptions.evaluate(underlying_values);
-        //
-        //thisPayoff = std::max(exerciseValue - Strike, 0.0);
-        for(int i=0;i<myOptions.compSize();++i){
-            runningSum[i] += thisPayoff[i];
+        //vector <double> thisPayoff (myOptions.compSize(),0.0);
+        vector <tuple <double,double> > thisPayoff;//(myOptions.compSize(),0.0);
+        for (int i = 0;i<myOptions.compSize();i++){
+            thisPayoff.emplace_back(make_pair(0.0,0.0));
         }
 
+        thisPayoff = myOptions.evaluate(underlying_values, NumberOfSamples/maxExpiry);
+
+        for (int i = 0; i<myOptions.compSize();i++){
+             get<1>(runningSum[i]) += get<1>(thisPayoff[i]);
+             get<0>(runningSum[i]) = get<0>(thisPayoff[i]);
+        }
     }
-    //mapa fecha, valor
-    vector<double> mean(myOptions.compSize(),0.0);
+
+    //map<double,double> mean{};
+   // vector<double> mean(myOptions.compSize(),0.0);
+    vector<tuple<double,double>> mean2{};
     for (int i=0;i<myOptions.compSize();++i){
-        mean[i] = runningSum[i] / NumberOfPaths;
-        mean[i] *= exp(-r * myOptions.getOptionGen(i)->getExpiry());
-    }
-    //auto mean = runningSum / NumberOfPaths;
-    // mean *= exp(-r*Expiry);
+        double media = get<1>(runningSum[i])/NumberOfPaths ;
+       // mean.insert(pair<double,double>(get<0>(runningSum[i]),media * exp(-r * myOptions.getOptionGen(i)->getExpiry())));
+       mean2.emplace_back(make_pair(get<0>(runningSum[i]),media * exp(-r * myOptions.getOptionGen(i)->getExpiry())));
 
-    return mean;
+    }
+    return mean2;
 }
 
 BOOST_AUTO_TEST_CASE(Test_OptionGen){
@@ -130,6 +123,43 @@ BOOST_AUTO_TEST_CASE(Test_OptionGen){
     BOOST_TEST(SimpleMonteCarlo2(Theta,4.0/12.0,305.0,0.25,0.08,100000,365).at(0) == putBSTheta.price(), boost::test_tools::tolerance(0.01));
     BOOST_TEST(SimpleMonteCarlo2(Vega,4.0/12.0,305.0,0.25,0.08,100000,365).at(0) == callBSVega.price(), boost::test_tools::tolerance(0.01));*/
 
+   /* cout<<"Deltas" <<SimpleMonteCarlo2(Deltas,4,305.0,0.25,0.08,100000,12).at(0)<<endl;
+      cout<<"Theta" <<SimpleMonteCarlo2(Theta,4.0/12.0,305.0,0.25,0.08,100000,12).at(0)<<endl;
+      cout<<"Vega"<< SimpleMonteCarlo2(Vega,4.0/12.0,305.0,0.25,0.08,100000,12).at(0)<<endl;*/
+
+   // map<double,double> valor = SimpleMonteCarlo2(Deltas,4,305.0,0.25,0.08,100000,365);
+   /* cout<<"Deltas" <<endl;
+    for (auto &x : valor){
+        cout<<"First: "<< x.first<<" Second: "<<x.second<<endl;
+    }
+    valor = SimpleMonteCarlo2(Theta,4.0/12.0,305.0,0.25,0.08,100000,365);
+    cout<<"Theta" <<endl;
+    for (auto &x : valor){
+        cout<<"First: "<< x.first<<" Second: "<<x.second<<endl;
+    }
+    valor = SimpleMonteCarlo2(Vega,4.0/12.0,305.0,0.25,0.08,100000,365);
+    cout<<"Vega"<<endl;
+    for (auto &x : valor){
+        cout<<"First: "<< x.first<<" Second: "<<x.second<<endl;
+    }*/
+    vector<tuple<double,double>> valor = SimpleMonteCarlo2(Deltas,305.0,0.25,0.08,100000,365);
+    cout<<"Deltas" <<endl;
+    for (auto &x : valor){
+        cout<<"First: "<< get<0>(x)<<" Second: "<<get<1>(x)<<endl;
+    }
+    valor = SimpleMonteCarlo2(Theta,305.0,0.25,0.08,100000,365);
+    cout<<"Theta" <<endl;
+    for (auto &x : valor){
+        cout<<"First: "<< get<0>(x)<<" Second: "<<get<1>(x)<<endl;
+    }
+    valor = SimpleMonteCarlo2(Vega,305.0,0.25,0.08,100000,365);
+    cout<<"Vega"<<endl;
+    for (auto &x : valor){
+        cout<<"First: "<< get<0>(x)<<" Second: "<<get<1>(x)<<endl;
+    }
+
+
+
 
     ///Comprobacion ejecucion en release///
     Call<double> opcionCallDelta1 (0.08,100,305,0.25,4.0);
@@ -150,16 +180,24 @@ BOOST_AUTO_TEST_CASE(Test_OptionGen){
 
     auto start = std::chrono::high_resolution_clock::now();
     //T,spot,sigma,interes,paths,samples
-    vector<double> result = SimpleMonteCarlo2(myOptions,4.0,305,0.25,0.08,100000,365);
+   // vector<double> result = SimpleMonteCarlo2(myOptions,4.0,305,0.25,0.08,100000,365);
+   // map <double,double> result = SimpleMonteCarlo2(myOptions,4.0,305,0.25,0.08,100000,365);
+    vector <tuple<double,double>> result = SimpleMonteCarlo2(myOptions,305,0.25,0.08,100000,365);
     auto end = std::chrono::high_resolution_clock::now();
 
-    std::for_each(result.begin(), result.end(),   [](const double& i) { std::cout << "Result: " << i<<endl;});
+    //std::for_each(result.begin(), result.end(),   [](map<double, double>::iterator it) { std::cout << "index: " << it->first<< " Key: "<<it->second<<endl;});
+    /*for (const auto& it : result) {
+        std::cout << "key: "<<it.first << " value: " << it.second << std::endl;
+    }*/
+    for (const auto& it : result) {
+        std::cout << "key: "<<get<0>(it) << " value: " << get<1>(it) << std::endl;
+    }
     std::chrono::duration<double> diff=end-start;
     cout << "Tiempo de cálculo: "<<diff.count()<<" segundos"<< endl;
 
 
     ///////Griegas de forma Numerica////
-    double deltaPrice = 0.001;
+   // double deltaPrice = 0.001;
 
     //OptionBS callBSDeltaNum (call,0.01,100,100,0.5,4.0);
    // OptionBS callBSDeltaNum1 (call,0.01,100,100 + deltaPrice,0.5,4.0);
