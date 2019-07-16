@@ -98,7 +98,6 @@ BOOST_AUTO_TEST_CASE(Test_OptionGen){
     Put<double> opcionPutTheta (0.08,300.0,305.0,0.25,4.0/12.0);
     Call<double> opcionCallVega (0.08,300,305,0.25,4.0/12.0);
 
-
     ///Comprobacion griegas con BS//
     BOOST_TEST(0.70542 == opcionCallDelta.griegas.delta(), boost::test_tools::tolerance(0.01));
     BOOST_TEST(-0.041109 == opcionPutTheta.griegas.theta()/365, boost::test_tools::tolerance(0.01));
