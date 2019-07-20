@@ -44,6 +44,8 @@ public:
 template <typename T>
 class Composite: public OptionGen<T>{
 public:
+    vector<std::pair<int, OptionGen<T> *>> signo;
+
     vector<OptionGen<T> *> vectorInst;
 
     /*  void add (shared_ptr<Option> elem){
@@ -70,11 +72,16 @@ public:
         return elem;
     }
     //vector de pares<fecha,valor>
+
+    //mapa <U, T>
     vector <tuple<T,T>> evaluate(vector<T> values, T criteria){
         vector<tuple<T,T>> result{};
+        //mezclar mapa de la opcion con mapa result //
         for(auto element : vectorInst){
             //= element->evaluate(values, criteria);
+            //multiplicar por el signo de la opcion
             vector<tuple<T,T>> result2 = element->evaluate(values, criteria);
+
             result.push_back(make_tuple(get<0>(result2[0]),get<1>(result2[0])));
         }
         return result;
@@ -251,6 +258,7 @@ public:
     }
     Put();
     //double price();
+    //dev0olver  mapa <U, T>
     vector<tuple<T,T>> evaluate(vector<T> values, T criteria){
         vector<tuple<T,T>> price{};
         double posicion =getExpiry()*criteria;
@@ -259,6 +267,7 @@ public:
         price.push_back(make_tuple(tau,max(strike - values.at(posicion),0.0)));
         return price;
     };
+
     T getExpiry(){
         return this->tau;
     }
