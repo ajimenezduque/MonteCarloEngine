@@ -22,7 +22,7 @@ public:
         return 0;
     }
 
-    virtual vector<tuple<T,T>> evaluate(vector<T> values, T criteria) = 0;
+    virtual map<T,T> evaluate(vector<T> values, T criteria) = 0;
     virtual T getExpiry() = 0;
 };
 
@@ -33,7 +33,7 @@ public:
         innerOption = optionAbstract;
     }
     OptionGen<T>* innerOption;
-    T evaluate(vector<T> values, T criteria){
+    map<T,T> evaluate(vector<T> values, T criteria){
         innerOption->evaluate(values,criteria);
     };
     T getExpiry(){
@@ -74,15 +74,26 @@ public:
     //vector de pares<fecha,valor>
 
     //mapa <U, T>
-    vector <tuple<T,T>> evaluate(vector<T> values, T criteria){
-        vector<tuple<T,T>> result{};
+    map<T,T> evaluate(vector<T> values, T criteria){
+        map<T,T> result{};
+        map<T,T> result2{};
         //mezclar mapa de la opcion con mapa result //
         for(auto element : vectorInst){
-            //= element->evaluate(values, criteria);
             //multiplicar por el signo de la opcion
-            vector<tuple<T,T>> result2 = element->evaluate(values, criteria);
-
-            result.push_back(make_tuple(get<0>(result2[0]),get<1>(result2[0])));
+            result2 = element->evaluate(values, criteria);
+            for (auto it=result2.begin(); it!=result2.end(); ++it){
+                    auto f = result.find(it->first);
+                    if(f != result.end()){
+                        //multiplicar por signo
+                        double suma{};
+                        suma = f->second + it->second;
+                        result.erase(f);
+                        result.insert (std::make_pair(it->first,suma));
+                    }else {
+                        result.insert(std::make_pair(it->first,it->second));
+                    }
+                //result.insert(it->first,suma);
+            }
         }
         return result;
     }
@@ -221,13 +232,15 @@ public:
     // double price(double interesAnual,double strike, double spot, double sigma, double tau);
 
     //añadir frecuencia de muestreo
-    vector<tuple<T,T>> evaluate(vector<T> values, T criteria){
-        vector<tuple<T,T>> price{};
+    map<T,T> evaluate(vector<T> values, T criteria){
+        //acumular en el mapa todos los prices
+        map<T,T> price{};
         //sacar valor coincidente en el tiempo
         //obtengo el valor a recuperar (tau*criteria)/maxExpiry
         double posicion =getExpiry()*criteria;
         //double posicion = (tau*criteria)/maxExpiry;
-        price.push_back(make_tuple(tau,max(values.at(posicion) - strike,0.0)));
+
+         price.insert(std::make_pair(tau,max(values.at(posicion) - strike,0.0)));
         return price;
     };
     T getExpiry(){
@@ -259,14 +272,14 @@ public:
     Put();
     //double price();
     //dev0olver  mapa <U, T>
-    vector<tuple<T,T>> evaluate(vector<T> values, T criteria){
-        vector<tuple<T,T>> price{};
-        double posicion =getExpiry()*criteria;
+    map<T,T> evaluate(vector<T> values, T criteria){
+        map<T,T> price{};
+        double posicion = getExpiry()*criteria;
         //obtengo el valor a recuperar (tau*criteria)/maxExpiry
         //double posicion = (tau*criteria)/maxExpiry;
-        price.push_back(make_tuple(tau,max(strike - values.at(posicion),0.0)));
+        price.insert(std::make_pair(tau,max(strike - values.at(posicion),0.0)));
         return price;
-    };
+    }
 
     T getExpiry(){
         return this->tau;
