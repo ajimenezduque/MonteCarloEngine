@@ -8,7 +8,7 @@ include(CMakeParseArguments)
 set(Boost_USE_STATIC_LIBS ON)
 
 find_package(Boost COMPONENTS unit_test_framework REQUIRED)
-
+find_library(ADEPT_LIB adept)
 enable_testing()
 
 function (boost_test_project)
@@ -42,7 +42,7 @@ function (boost_test_project)
 
 	file(GLOB SRC_FILES  ${CXX_FILE_EXTENSIONS})
 	add_executable(${PARSED_ARGS_NAME}  ${SRC_FILES})
-	target_link_libraries(${PARSED_ARGS_NAME} ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
+	target_link_libraries(${PARSED_ARGS_NAME} ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} ${ADEPT_LIB})
 
 	foreach(lib_dep ${PARSED_ARGS_DEPS})
         target_link_libraries(${PARSED_ARGS_NAME} ${lib_dep})

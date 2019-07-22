@@ -9,11 +9,10 @@
 cmake_minimum_required(VERSION 3.12)
 project(MonteCarloEngine)
 
-
 # 1. Define some well-known folders:
 # - Place for compile binaries
-set(CMAKE_BINARY_DIR ${PROJECT_SOURCE_DIR}/build)
 
+set(CMAKE_BINARY_DIR ${PROJECT_SOURCE_DIR}/build)
 
 # - Root for include files
 set(INCLUDE_HOME ${PROJECT_SOURCE_DIR}/src)
@@ -46,6 +45,9 @@ set(CXX_FILE_EXTENSIONS "*.h" "*.cpp")
 
 # 4. Set Compilation environment
 include_directories(${INCLUDE_HOME})
+include_directories(/usr/local/lib)
+include_directories(/usr/local/include/)
+
 add_definitions(-std=gnu++14)
 
 # 5. Add subdirs
