@@ -113,7 +113,7 @@ BOOST_AUTO_TEST_CASE(Test_OptionGen){
     cout<<"Delta: "<<opcionCallVega.griegas.delta()<<endl;
     cout<<"Theta: "<<opcionCallVega.griegas.theta()<<endl;
     cout<<"Vega: "<<opcionCallVega.griegas.vega()<<endl;
-
+//
     Composite<adouble> Deltas;
     Deltas.add(&opcionCallDelta);
 
