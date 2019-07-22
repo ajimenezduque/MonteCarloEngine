@@ -23,9 +23,9 @@ using namespace adept;
 //double
 adouble SimpleMonteCarlo2(
         OptionGen<adouble> &option,
-        adouble Spot,//dato de mercado dejar como input
-        adouble Vol,//input
-        adouble r,//input
+        const adouble Spot,//dato de mercado dejar como input
+        const adouble Vol,//input
+        const adouble r,//input
        // const adouble x[3],
         unsigned long NumberOfPaths,
         unsigned long NumberOfSamples)

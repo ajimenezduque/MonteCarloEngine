@@ -30,6 +30,8 @@ public:
         return 0;
     }
 
+    int signo;
+
     virtual map<T,T> evaluate(vector<T> values, double criteria) = 0;
     virtual double getExpiry() = 0;
 };
@@ -52,13 +54,17 @@ public:
 template <typename T>
 class Composite: public OptionGen<T>{
 public:
-    vector<std::pair<int, OptionGen<T> *>> signo;
-
-    vector<OptionGen<T> *> vectorInst;
+    vector<std::pair<int, OptionGen<T> *>> vectorInst;
 
     void add (OptionGen<T> *elem){
-        vectorInst.push_back(elem);
+        vectorInst.push_back(make_pair(elem->signo,elem));
     }
+
+    //vector<OptionGen<T> *> vectorInst;
+
+    /*void add (OptionGen<T> *elem){
+        vectorInst.push_back(elem);
+    }*/
 
     void remove( const unsigned int index )
     {
@@ -71,8 +77,9 @@ public:
         return vectorInst.size();
     }
 
+
     OptionGen<T> *getOptionGen (int n){
-        auto elem = vectorInst[n];
+        auto elem = get<1>(vectorInst[n]);
         return elem;
     }
     //vector de pares<fecha,valor>
@@ -85,7 +92,7 @@ public:
         for(auto element : vectorInst){
             //multiplicar por el signo de la opcion
 
-            result2 = element->evaluate(values, criteria);
+            result2 = get<1>(element)->evaluate(values, criteria);
             for (auto it=result2.begin(); it!=result2.end(); ++it){
                     auto f = result.find(it->first);
                     if(f != result.end()){
@@ -106,7 +113,7 @@ public:
     double  getExpiry(){
         double  maxExpiry = 0.0;
         for (const auto element : vectorInst){
-            maxExpiry = max(maxExpiry,element->getExpiry());
+            maxExpiry = max(maxExpiry,get<1>(element)->getExpiry());
         }
         return maxExpiry;
     }
@@ -219,7 +226,7 @@ class Call: public OptionGen<T> {
 public:
     Greeks<T> griegas;
 //variable de entrada
-
+    int signo;
     T interesAnual;
     T strike;
     T spot;
@@ -230,8 +237,8 @@ public:
     T forward;
     T factorDescuento;
 
-    Call(T interesAnual, T strike, T spot, T sigma, double tau):
-            interesAnual(interesAnual),strike(strike),spot(spot),sigma(sigma),tau(tau), griegas(call,interesAnual,strike,spot,sigma,tau)
+    Call(int signo,T interesAnual, T strike, T spot, T sigma, double tau):
+            signo(signo),interesAnual(interesAnual),strike(strike),spot(spot),sigma(sigma),tau(tau), griegas(call,interesAnual,strike,spot,sigma,tau)
     {
         factorDescuento = exp(-interesAnual*tau);
         forward = spot/factorDescuento;
@@ -244,7 +251,7 @@ public:
         //acumular en el mapa todos los prices
         map<T,T> price{};
         unsigned long  posicion = getExpiry()*criteria;
-        price.insert(std::make_pair(tau,max(values.at(posicion) - strike,0.0)));
+        price.insert(std::make_pair(tau,signo*max(values.at(posicion) - strike,0.0)));
 
         return price;
     };
@@ -258,6 +265,7 @@ class Put: public OptionGen<T> {
 public:
     Greeks<T> griegas;
 //variable de entrada
+    int signo;
     T interesAnual;
     T strike;
     T spot;
@@ -268,8 +276,8 @@ public:
     T forward;
     T factorDescuento;
 
-    Put(T interesAnual, T strike, T spot, T sigma, double tau):
-            interesAnual(interesAnual),strike(strike),spot(spot),sigma(sigma),tau(tau), griegas(put,interesAnual,strike,spot,sigma,tau)
+    Put(int signo,T interesAnual, T strike, T spot, T sigma, double tau):
+            signo(signo),interesAnual(interesAnual),strike(strike),spot(spot),sigma(sigma),tau(tau), griegas(put,interesAnual,strike,spot,sigma,tau)
     {
         factorDescuento = exp(-interesAnual*tau);
         forward = spot/factorDescuento;
@@ -280,7 +288,7 @@ public:
     map<T,T> evaluate(vector<T> values, double criteria){
         map<T,T> price{};
         unsigned long posicion = getExpiry()*criteria;
-        price.insert(make_pair(tau,max(strike - values.at(posicion),0.0)));
+        price.insert(make_pair(tau,signo*max(strike - values.at(posicion),0.0)));
 
         return price;
     }

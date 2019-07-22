@@ -94,15 +94,16 @@ BOOST_AUTO_TEST_CASE(Test_OptionGen){
     double paths = 100000;
     double samples = 12;
 
-    Call<double> opcionCallDelta(0.01, 100, 100, 0.5, 4.0);
+    Call<double> opcionCallDelta(1,0.01, 100, 100, 0.5, 4.0);
 
-    Put<double> opcionPutTheta(0.08, 300.0, 305.0, 0.25, 4.0 / 12.0);
-    Call<double> opcionCallVega(0.08, 300, 305, 0.25, 4.0 / 12.0);
+    Put<double> opcionPutTheta(-1,0.08, 300.0, 305.0, 0.25, 4.0 / 12.0);
+    Call<double> opcionCallVega(-1,0.08, 300, 305, 0.25, 4.0 / 12.0);
 
     cout<<"Griegas: "<<endl;
-    cout<<"Delta: "<<opcionPutTheta.griegas.delta()<<endl;
-    cout<<"Theta: "<<opcionPutTheta.griegas.theta()<<endl;
-    cout<<"Vega: "<<opcionPutTheta.griegas.vega()<<endl;
+    cout<<"Delta: "<<opcionCallVega.griegas.delta()<<endl;
+    cout<<"Theta: "<<opcionCallVega.griegas.theta()<<endl;
+    cout<<"Vega: "<<opcionCallVega.griegas.vega()<<endl;
+    cout<<"Fin griegas.--"<<endl;
 
     ///Comprobacion griegas con BS//
   /*  BOOST_TEST(0.70542 == opcionCallDelta.griegas.delta(), boost::test_tools::tolerance(0.01));
@@ -159,9 +160,9 @@ BOOST_AUTO_TEST_CASE(Test_OptionGen){
 
 
     ///Comprobacion ejecucion en release///
-    Call<double> opcionCallDelta1 (0.08,100,305,0.25,4.0);
-    Put<double> opcionPutTheta1 (0.08,300.0,305.0,0.25,4.0/12.0);
-    Call<double> opcionCallVega1 (0.08,300,305,0.25,4.0/12.0);
+    Call<double> opcionCallDelta1 (1,0.08,100,305,0.25,4.0);
+    Put<double> opcionPutTheta1 (-1,0.08,300.0,305.0,0.25,4.0/12.0);
+    Call<double> opcionCallVega1 (-1,0.08,300,305,0.25,4.0/12.0);
 
     //OptionBS callBSDelta1 (call,0.08,100,305,0.25,4.0);
     //cout<<"Delta1 "<<callBSDelta1.price()<<endl;
