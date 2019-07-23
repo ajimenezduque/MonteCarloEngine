@@ -19,18 +19,17 @@
 
 using namespace std;
 using namespace adept;
-//Spot, volatilidad y interes dependen del momento actual por lo que son inputs montcarlo
+
 //double
 adouble SimpleMonteCarlo2(
         OptionGen<adouble> &option,
-        const adouble Spot,//dato de mercado dejar como input
-        const adouble Vol,//input
-        const adouble r,//input
+        const adouble Spot,
+        const adouble Vol,
+        const adouble r,
        // const adouble x[3],
         unsigned long NumberOfPaths,
         unsigned long NumberOfSamples)
 {
-
 
     //use this construction for a random generator with a fixed random sequence
     std::mt19937 gen(1234);
@@ -77,7 +76,6 @@ adouble SimpleMonteCarlo2(
                 // cout<<"Entra no tiene valores: "<< it->first<<" Second : "<<it->second<<endl;
                 runningSum.insert(make_pair(it->first, it->second));
             }
-
         }
     }
 
@@ -94,10 +92,6 @@ BOOST_AUTO_TEST_CASE(Test_OptionGen){
     BOOST_TEST_MESSAGE("Se ejecuta test opcion Put y call, comprobando pricing y griegas con BS y con MC");
    cout<<"Prueba"<<endl;
    Stack stack;
-   adouble x[3];
-    x[0] = 305.0;
-    x[1] = 0.25;
-    x[2] = 0.08;
 
     adouble interes = 0.08;
     adouble spot = 305.0;
@@ -105,15 +99,20 @@ BOOST_AUTO_TEST_CASE(Test_OptionGen){
     unsigned long paths = 100000;
     unsigned long samples = 12;
 
-    Call<adouble> opcionCallDelta(0.01, 100, 100, 0.5, 4.0);
-    Put<adouble> opcionPutTheta(0.08, 300.0, 305.0, 0.25, 4.0 / 12.0);
-    Call<adouble> opcionCallVega(0.08, 300, 305, 0.25, 4.0 / 12.0);
+    Call<adouble> opcionCallDelta(1,0.01, 100, 100, 0.5, 4.0);
+    Put<adouble> opcionPutTheta(1,0.08, 300.0, 305.0, 0.25, 4.0 / 12.0);
+    double deltaPrice = 0.001;
+    Call<adouble> opcionCallVega(1,0.08, 300, 305, 0.25, 4.0 / 12.0);
+
+    Call<adouble> opcionCallVegaNew(1,0.08, 300, 305 + deltaPrice, 0.25, 4.0 / 12.0);
 
     cout<<"Griegas: "<<endl;
     cout<<"Delta: "<<opcionCallVega.griegas.delta()<<endl;
     cout<<"Theta: "<<opcionCallVega.griegas.theta()<<endl;
     cout<<"Vega: "<<opcionCallVega.griegas.vega()<<endl;
 //
+    adouble spotM = SimpleMonteCarlo2(opcionCallVegaNew, spot + deltaPrice,sigma,interes, paths, samples);
+
     Composite<adouble> Deltas;
     Deltas.add(&opcionCallDelta);
 
@@ -134,13 +133,11 @@ BOOST_AUTO_TEST_CASE(Test_OptionGen){
     stack.print_gradients();
     cout<<endl;
     //for (int i=0;i<3;++i){
-        cout<<"Gradiente "<<0<<": "<<spot.get_gradient()/100000<<endl;
-        cout<<"Gradiente "<<1<<": "<<sigma.get_gradient()/100000<<endl;
-        cout<<"Gradiente "<<2<<": "<<interes.get_gradient()/100000<<endl;
+        cout<<"Gradiente Spot"<<0<<": "<<spot.get_gradient()/100000<<endl;
+        cout<<"Gradiente Sigma "<<1<<": "<<sigma.get_gradient()/100000<<endl;
+        cout<<"Gradiente Interes"<<2<<": "<<interes.get_gradient()/100000<<endl;
    // }
     cout<<"Vega "<<valor<<endl;
-
-
 
 
    /* valor = SimpleMonteCarlo2(Theta, 305.0, 0.25, 0.08, 100000, 12);
@@ -150,10 +147,9 @@ BOOST_AUTO_TEST_CASE(Test_OptionGen){
 
 
     ///Comprobacion Composite en release///
-    Call<adouble> opcionCallDelta1 (0.08,100,305,0.25,4.0);
-    Put<adouble> opcionPutTheta1 (0.08,300.0,305.0,0.25,4.0/12.0);
-    Call<adouble> opcionCallVega1 (0.08,300,305,0.25,4.0/12.0);
-
+    Call<adouble> opcionCallDelta1 (1,0.08,100,305,0.25,4.0);
+    Put<adouble> opcionPutTheta1 (1,0.08,300.0,305.0,0.25,4.0/12.0);
+    Call<adouble> opcionCallVega1 (1,0.08,300,305,0.25,4.0/12.0);
 
     Composite<adouble> myOptions;
     myOptions.add(&opcionCallDelta1);

@@ -18,11 +18,11 @@ using namespace std;
 //double
 double SimpleMonteCarlo2(
                                  OptionGen<double> &option,
-                                 double Spot,//dato de mercado dejar como input
-                                 double Vol,//input
-                                 double r,//input
-                                 unsigned long NumberOfPaths,
-                                 unsigned long NumberOfSamples)
+                                 const double Spot,//dato de mercado dejar como input
+                                 const double Vol,//input
+                                 const double r,//input
+                                 const unsigned long NumberOfPaths,
+                                 const unsigned long NumberOfSamples)
 {
 
 
@@ -60,6 +60,7 @@ double SimpleMonteCarlo2(
         thisPayoff = option.evaluate(underlying_values, NumberOfSamples / maxExpiry);
 
         for (auto it = thisPayoff.begin(); it != thisPayoff.end(); ++it) {
+            //runningSum[it->first] = it->second +
             auto f = runningSum.find(it->first);
             if (f != runningSum.end()) {
               //  cout<<"Entra autof : First: " <<it->first<<" second : "<<it->second<<" Fsecond : "<<f->second<<endl;
@@ -91,13 +92,25 @@ BOOST_AUTO_TEST_CASE(Test_OptionGen){
     double interes = 0.08;
     double spot = 305.0;
     double sigma = 0.25;
-    double paths = 100000;
-    double samples = 12;
-
+    unsigned long paths = 100000;
+    unsigned long samples = 12;
+    double deltaPrice = 0.00001;
     Call<double> opcionCallDelta(1,0.01, 100, 100, 0.5, 4.0);
 
     Put<double> opcionPutTheta(-1,0.08, 300.0, 305.0, 0.25, 4.0 / 12.0);
-    Call<double> opcionCallVega(-1,0.08, 300, 305, 0.25, 4.0 / 12.0);
+
+    Call<double> opcionCallVega(1,0.08, 300, 305, 0.25, 4.0 / 12.0);
+
+   // Call<double> opcionCallVegaNew(1,0.08, 300, 305, 0.25, 4.0 / 12.0);
+    double spotM = SimpleMonteCarlo2(opcionCallVega, spot + deltaPrice,sigma,interes, paths, samples);
+    double base = SimpleMonteCarlo2(opcionCallVega, spot,sigma,interes, paths, samples);
+    double sigmaM = SimpleMonteCarlo2(opcionCallVega,spot,sigma + deltaPrice,interes,paths,samples);
+
+    cout<<"Valoracion SpotM: "<<spotM<<endl;
+    cout<<"Valoracion Spot1: "<<base<<endl;
+
+    cout<<"Dif Spot: "<<((spotM-base)/deltaPrice)<<endl;
+    cout<<"Dif Sigma: "<<((sigmaM-base)/deltaPrice)<<endl;
 
     cout<<"Griegas: "<<endl;
     cout<<"Delta: "<<opcionCallVega.griegas.delta()<<endl;
@@ -105,15 +118,6 @@ BOOST_AUTO_TEST_CASE(Test_OptionGen){
     cout<<"Vega: "<<opcionCallVega.griegas.vega()<<endl;
     cout<<"Fin griegas.--"<<endl;
 
-    ///Comprobacion griegas con BS//
-  /*  BOOST_TEST(0.70542 == opcionCallDelta.griegas.delta(), boost::test_tools::tolerance(0.01));
-    BOOST_TEST(-0.041109 == opcionPutTheta.griegas.theta() / 365, boost::test_tools::tolerance(0.01));
-    BOOST_TEST(65.56772 == opcionCallVega.griegas.vega(), boost::test_tools::tolerance(0.01));*/
-
-
-    //OptionBS callBSDelta (call,0.01,100,100,0.5,4.0);
-    //OptionBS putBSTheta (put,0.08,300.0,305.0,0.25,4.0/12.0);
-//    OptionBS callBSVega (call,0.08,300,305,0.25,4.0/12.0);
 
 
     Composite<double> Deltas;
@@ -125,17 +129,6 @@ BOOST_AUTO_TEST_CASE(Test_OptionGen){
     Composite<double> Vega;
     Vega.add(&opcionCallVega);
 
-    ///Comprobacion Pricing BS vs Montecarlo 1 vs 1 ///
-    /*  BOOST_TEST(SimpleMonteCarlo2(Deltas,4,100.0,0.5,0.01,100000,365).at(0) == callBSDelta.price(), boost::test_tools::tolerance(0.01));
-      BOOST_TEST(SimpleMonteCarlo2(Theta,4.0/12.0,305.0,0.25,0.08,100000,365).at(0) == putBSTheta.price(), boost::test_tools::tolerance(0.01));
-      BOOST_TEST(SimpleMonteCarlo2(Vega,4.0/12.0,305.0,0.25,0.08,100000,365).at(0) == callBSVega.price(), boost::test_tools::tolerance(0.01));*/
-
-    /* cout<<"Deltas" <<SimpleMonteCarlo2(Deltas,4,305.0,0.25,0.08,100000,12).at(0)<<endl;
-       cout<<"Theta" <<SimpleMonteCarlo2(Theta,4.0/12.0,305.0,0.25,0.08,100000,12).at(0)<<endl;
-       cout<<"Vega"<< SimpleMonteCarlo2(Vega,4.0/12.0,305.0,0.25,0.08,100000,12).at(0)<<endl;*/
-
-    //map<double,vector<double>> valor = SimpleMonteCarlo2(Deltas,305.0,0.25,0.08,100000,12);
-    //vector<tuple<double, vector<double>>> valor = SimpleMonteCarlo2(Deltas, 305.0, 0.25, 0.08, 100000, 12);
     double valor = SimpleMonteCarlo2(opcionCallDelta, 305.0, 0.25, 0.08, 100000, 12);
     cout<<"Delta "<<valor<<endl;
     valor = SimpleMonteCarlo2(Theta, 305.0, 0.25, 0.08, 100000, 12);
@@ -143,33 +136,10 @@ BOOST_AUTO_TEST_CASE(Test_OptionGen){
     valor = SimpleMonteCarlo2(Vega, 305.0, 0.25, 0.08, 100000, 12);
     cout<<"Vega "<<valor<<endl;
 
-  /*  cout << "Deltas" << endl;
-    for (int i = 0; i < valor.size();i++){
-        double sum{};
-        double price{};
-       // cout<<"Fecha: "<< get<0>(valor[i])<<" Vector: ";
-        for (int j =0; j < get<1>(valor[i]).size();++j){
-            sum += get<1>(valor[i]).at(j);
-            //cout<<get<1>(valor[i]).at(j)<<" ";
-        }
-        sum = sum / 100000;
-        price = sum * exp(-0.08 * get<0>(valor[i]));
-        cout<<"Price Delta: "<<price<<endl;
-    }*/
-
-
-
     ///Comprobacion ejecucion en release///
     Call<double> opcionCallDelta1 (1,0.08,100,305,0.25,4.0);
     Put<double> opcionPutTheta1 (-1,0.08,300.0,305.0,0.25,4.0/12.0);
     Call<double> opcionCallVega1 (-1,0.08,300,305,0.25,4.0/12.0);
-
-    //OptionBS callBSDelta1 (call,0.08,100,305,0.25,4.0);
-    //cout<<"Delta1 "<<callBSDelta1.price()<<endl;
-    //OptionBS putBSTheta1 (put,0.08,300.0,305.0,0.25,4.0/12.0);
-    //cout<<"Theta1 "<<putBSTheta1.price()<<endl;
-    //OptionBS callBSVega1 (call,0.08,300,305,0.25,4.0/12.0);
-    //cout<<"Vega1 "<<callBSVega1.price()<<endl;
 
 
     Composite<double> myOptions;
@@ -179,6 +149,26 @@ BOOST_AUTO_TEST_CASE(Test_OptionGen){
 
     double result = SimpleMonteCarlo2(myOptions,305,0.25,0.08,100000,12);
     cout<<"Portfolio: "<<result<<endl;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     /*for (int i = 0; i < result.size();i++){
         double sum{};
         double price{};

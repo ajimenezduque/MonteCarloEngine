@@ -287,6 +287,7 @@ public:
     //dev0olver  mapa <U, T>
     map<T,T> evaluate(vector<T> values, double criteria){
         map<T,T> price{};
+        //getExpiry como T no se puede cambiado en todos lados
         unsigned long posicion = getExpiry()*criteria;
         price.insert(make_pair(tau,signo*max(strike - values.at(posicion),0.0)));
 
