@@ -44,7 +44,7 @@ double SimpleMonteCarlo2(
     auto movedSpotFactor = std::exp((r - (0.5 * variance))*dt);
 
     map<double,double> runningSum{};
-
+    
     for (unsigned long i = 0; i < NumberOfPaths; i++) {
         for (unsigned long j = 1; j < underlying_values.size(); j++) {
             auto thisGaussian = nomalDistribution(gen);
@@ -56,7 +56,8 @@ double SimpleMonteCarlo2(
         map<double, double> thisPayoff{};
 
         thisPayoff = option.evaluate(underlying_values, NumberOfSamples / maxExpiry);
-
+    
+    
         for (auto it = thisPayoff.begin(); it != thisPayoff.end(); ++it) {
             runningSum[it->first] = runningSum[it->first] + (exp(-r * it->first) * (it->second / NumberOfPaths));
         }
@@ -68,7 +69,6 @@ double SimpleMonteCarlo2(
         //value += (exp(-r * it->first) * (it->second / NumberOfPaths));
         value += it->second;
     }
-
     return value;
 }
 
@@ -131,22 +131,22 @@ BOOST_AUTO_TEST_CASE(Test_OptionGen){
      cout<<"Delta: "<<ejercicio.griegas.delta()<<endl;
     cout<<"Vega: "<<ejercicio.griegas.vega()<<endl;
     */
-   /* Call<double> opcionCallVega(1,0.08, 300, 305, 0.25, 4.0 / 12.0);
+    Call<double> opcionCallVega(1,0.08, 300, 305, 0.25, 4.0 / 12.0);
     cout<<"Delta: "<<opcionCallVega.griegas.delta()<<endl;
     cout<<"Vega: "<<opcionCallVega.griegas.vega()<<endl;
-    */
+
     auto start = std::chrono::high_resolution_clock::now();
-    double valoracionBase = SimpleMonteCarlo2(myOptions1,spot,sigma,interes,paths,samples);
+    double valoracionBase = SimpleMonteCarlo2(opcionCallVega,spot,sigma,interes,paths,samples);
 
     double deltaPrice = 0.00001;
 
-    double bumpedSpot = SimpleMonteCarlo2(myOptions1,spot + deltaPrice,sigma,interes,paths,samples);
+    double bumpedSpot = SimpleMonteCarlo2(opcionCallVega,spot + deltaPrice,sigma,interes,paths,samples);
 
 
-    double bumpedVol = SimpleMonteCarlo2(myOptions1,spot,sigma + deltaPrice,interes,paths,samples);
+    double bumpedVol = SimpleMonteCarlo2(opcionCallVega,spot,sigma + deltaPrice,interes,paths,samples);
 
 
-    double bumpedInt = SimpleMonteCarlo2(myOptions1,spot,sigma,interes + deltaPrice,paths,samples);
+    double bumpedInt = SimpleMonteCarlo2(opcionCallVega,spot,sigma,interes + deltaPrice,paths,samples);
 
 
     auto end = std::chrono::high_resolution_clock::now();

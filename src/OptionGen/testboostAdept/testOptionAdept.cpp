@@ -36,7 +36,7 @@ adouble SimpleMonteCarlo2(
 
     // values near the mean are the most likely
     // standard deviation affects the dispersion of generated values from the mean
-    std::normal_distribution<> nomalDistribution(0,1);
+    std::normal_distribution<> normalDistribution(0,1);
 
     double maxExpiry = option.getExpiry();
 
@@ -50,34 +50,39 @@ adouble SimpleMonteCarlo2(
 
     adouble movedSpotFactor = exp((r - (0.5 * variance))*dt);
 
+    adouble value{};
     map<adouble,adouble> runningSum{};
-    adouble thisGaussian{};
+
+
+    adouble thisGaussian {};
     adouble diffusion{};
     adouble drift{};
+    map<adouble, adouble> thisPayoff{};
     for (unsigned long i = 0; i < NumberOfPaths; i++) {
         for (unsigned long j = 1; j < underlying_values.size(); j++) {
-             thisGaussian = nomalDistribution(gen);
+             thisGaussian = normalDistribution(gen);
              diffusion = exp(rootVariance * thisGaussian);
              drift = underlying_values[j - 1] * movedSpotFactor;
-            underlying_values[j] = drift * diffusion;
+             underlying_values[j] = drift * diffusion;
         }
-
-        map<adouble, adouble> thisPayoff{};
 
         thisPayoff = option.evaluate(underlying_values, NumberOfSamples/maxExpiry);
 
         for (auto it = thisPayoff.begin(); it != thisPayoff.end(); ++it) {
-           runningSum[it->first] = runningSum[it->first] + (exp(-r * it->first) * (it->second/NumberOfPaths));
+           runningSum[it->first] = runningSum[it->first] + (exp(-r * it->first) * (it->second));
         }
     }
 
-    adouble value{};
     for (auto it = runningSum.begin(); it != runningSum.end(); ++it) {
         // cout<< it->first << " => " << it->second << '\n';
         //value += (exp(-r * it->first) * (it->second / NumberOfPaths));
         value+= it->second;
     }
-    return value;
+
+    //value = exp(-r * maxExpiry) * running;
+
+    adouble NumberOfPaths1 = NumberOfPaths;
+    return value/NumberOfPaths1;
 }
 
 BOOST_AUTO_TEST_CASE(Test_OptionGenAdept){
@@ -157,23 +162,14 @@ BOOST_AUTO_TEST_CASE(Test_OptionGenAdept){
     stack.new_recording();
 
     auto start = std::chrono::high_resolution_clock::now();
-   adouble valoracionBase = SimpleMonteCarlo2(myOptions1,spot,sigma,interes,paths,samples);
-    //adouble valoracionBase = SimpleMonteCarlo2(opcionCallVega,spot,sigma,interes,paths,samples);
+   //adouble valoracionBase = SimpleMonteCarlo2(myOptions1,spot,sigma,interes,paths,samples);
+    adouble valoracionBase = SimpleMonteCarlo2(opcionCallVega,spot,sigma,interes,paths,samples);
     valoracionBase.set_gradient(1.0);
     stack.compute_adjoint();
-
-   // stack.reverse();
 
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> diff = end-start;
     cout << "Tiempo de cálculo: "<<diff.count()<<" segundos"<< endl;
-
-    std::cout << "Final list of gradients:\n";
-    stack.print_gradients();
-    cout<<endl;
-   /* cout<<"Delta: "<<x[0].get_gradient()<<endl;
-    cout<<"Vega: "<<x[1].get_gradient()<<endl;
-    cout<<"Rho: "<<x[2].get_gradient()<<endl;*/
 
     cout<<"Delta: "<<spot.get_gradient()<<endl;
     cout<<"Vega: "<<sigma.get_gradient()<<endl;
