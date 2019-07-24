@@ -26,7 +26,7 @@ adouble SimpleMonteCarlo2(
         const adouble Spot,
         const adouble Vol,
         const adouble r,
-       // const adouble x[3],
+        //const adouble x[3],
         unsigned long NumberOfPaths,
         unsigned long NumberOfSamples)
 {
@@ -51,12 +51,14 @@ adouble SimpleMonteCarlo2(
     adouble movedSpotFactor = exp((r - (0.5 * variance))*dt);
 
     map<adouble,adouble> runningSum{};
-
+    adouble thisGaussian{};
+    adouble diffusion{};
+    adouble drift{};
     for (unsigned long i = 0; i < NumberOfPaths; i++) {
         for (unsigned long j = 1; j < underlying_values.size(); j++) {
-            adouble thisGaussian = nomalDistribution(gen);
-            adouble diffusion = exp(rootVariance * thisGaussian);
-            adouble drift = underlying_values[j - 1] * movedSpotFactor;
+             thisGaussian = nomalDistribution(gen);
+             diffusion = exp(rootVariance * thisGaussian);
+             drift = underlying_values[j - 1] * movedSpotFactor;
             underlying_values[j] = drift * diffusion;
         }
 
@@ -65,98 +67,120 @@ adouble SimpleMonteCarlo2(
         thisPayoff = option.evaluate(underlying_values, NumberOfSamples/maxExpiry);
 
         for (auto it = thisPayoff.begin(); it != thisPayoff.end(); ++it) {
-            auto f = runningSum.find(it->first);
-            if (f != runningSum.end()) {
-                //  cout<<"Entra autof : First: " <<it->first<<" second : "<<it->second<<" Fsecond : "<<f->second<<endl;
-                adouble suma{};
-                suma = it->second + f->second;
-                runningSum.erase(f);
-                runningSum.insert(make_pair(it->first, suma));
-            } else {
-                // cout<<"Entra no tiene valores: "<< it->first<<" Second : "<<it->second<<endl;
-                runningSum.insert(make_pair(it->first, it->second));
-            }
+           runningSum[it->first] = runningSum[it->first] + (exp(-r * it->first) * (it->second/NumberOfPaths));
         }
     }
 
     adouble value{};
     for (auto it = runningSum.begin(); it != runningSum.end(); ++it) {
         // cout<< it->first << " => " << it->second << '\n';
-        value += (exp(-r * it->first) * (it->second / NumberOfPaths));
+        //value += (exp(-r * it->first) * (it->second / NumberOfPaths));
+        value+= it->second;
     }
-
     return value;
 }
 
-BOOST_AUTO_TEST_CASE(Test_OptionGen){
+BOOST_AUTO_TEST_CASE(Test_OptionGenAdept){
     BOOST_TEST_MESSAGE("Se ejecuta test opcion Put y call, comprobando pricing y griegas con BS y con MC");
-   cout<<"Prueba"<<endl;
-   Stack stack;
+
+    Stack stack;
+    adouble x[3];
+    x[0].set_value(17);
+    x[1].set_value(0.25);
+    x[2].set_value(0.03);
+  //  Call<adouble> opcionCallDelta1 (1,0.08,100,305,0.25,4.0);
+    //Put<adouble> opcionPutTheta1 (1,0.08,300.0,305.0,0.25,4.0/12.0);
+    //Call<adouble> opcionCallVega1 (1,0.08,300,305,0.25,4.0/12.0);
+    Composite <adouble> myOptions1;
+   /* Composite<adouble> myOptions;
+    myOptions.add(&opcionCallDelta1);
+    myOptions.add(&opcionPutTheta1);
+    myOptions.add(&opcionCallVega1);*/
+
+   /* Call<adouble> opcionCall1 (1,0.08,275,305,0.25,4.0);
+    Call<adouble> opcionCall2 (1,0.08,350,305,0.25,4.0);
+    Call<adouble> opcionCall3 (1,0.08,325,305,0.25,3.0);
+    Call<adouble> opcionCall4 (1,0.08,275,305,0.25,2.0);
+    Call<adouble> opcionCall5 (1,0.08,350,305,0.25,2.0);
+    Call<adouble> opcionCall6 (1,0.08,325,305,0.25,4.0/12.0);
+
+    Put<adouble> opcionPut1 (1,0.08,325.0,305.0,0.25,4.0);
+    Put<adouble> opcionPut2 (1,0.08,275.0,305.0,0.25,3.0);
+    Put<adouble> opcionPut3 (1,0.08,350.0,305.0,0.25,3.0);
+    Put<adouble> opcionPut4 (1,0.08,325.0,305.0,0.25,2);
+    Put<adouble> opcionPut5 (1,0.08,275,305.0,0.25,4.0/12.0);
+    Put<adouble> opcionPut6 (1,0.08,350.0,305.0,0.25,4.0/12.0);
+
+    myOptions1.add(&opcionCall1);
+    myOptions1.add(&opcionPut1);
+    myOptions1.add(&opcionCall2);
+    myOptions1.add(&opcionPut2);
+    myOptions1.add(&opcionCall3);
+    myOptions1.add(&opcionPut3);
+    myOptions1.add(&opcionCall4);
+    myOptions1.add(&opcionPut4);
+    myOptions1.add(&opcionCall5);
+    myOptions1.add(&opcionPut5);
+    myOptions1.add(&opcionCall6);
+    myOptions1.add(&opcionPut6);*/
+
 
     adouble interes = 0.08;
     adouble spot = 305.0;
     adouble sigma = 0.25;
-    unsigned long paths = 100000;
-    unsigned long samples = 12;
+    unsigned long paths = 10000;
+    unsigned long samples = 365;
+    vector<adouble> strikes {275,325,350};
+    vector<double> vencimientos {4,3,2,4.0/12.0};
 
-    Call<adouble> opcionCallDelta(1,0.01, 100, 100, 0.5, 4.0);
-    Put<adouble> opcionPutTheta(1,0.08, 300.0, 305.0, 0.25, 4.0 / 12.0);
-    double deltaPrice = 0.001;
+
+    int par = 0;
+    for(int i = 0;i < vencimientos.size();++i){
+        for(int j = 0; j < strikes.size();++j){
+            if(par%2 == 0){
+                Call<adouble> *option = new Call<adouble>(1,0.08,strikes[j],305,0.25,vencimientos[i]);
+                myOptions1.add(option);
+            }else{
+                Put<adouble> *option = new Put<adouble>(1,0.08,strikes[j],305,0.25,vencimientos[i]);
+                myOptions1.add(option);
+            }
+            par++;
+        }
+    }
+
+    /*Call<adouble> ejercicio (1,0.03,15,17,0.25,4.0/12.0);
+    cout<<"Delta: "<<ejercicio.griegas.delta()<<endl;
+    cout<<"Vega: "<<ejercicio.griegas.vega()<<endl;*/
     Call<adouble> opcionCallVega(1,0.08, 300, 305, 0.25, 4.0 / 12.0);
-
-    Call<adouble> opcionCallVegaNew(1,0.08, 300, 305 + deltaPrice, 0.25, 4.0 / 12.0);
-
-    cout<<"Griegas: "<<endl;
     cout<<"Delta: "<<opcionCallVega.griegas.delta()<<endl;
-    cout<<"Theta: "<<opcionCallVega.griegas.theta()<<endl;
     cout<<"Vega: "<<opcionCallVega.griegas.vega()<<endl;
-//
-    adouble spotM = SimpleMonteCarlo2(opcionCallVegaNew, spot + deltaPrice,sigma,interes, paths, samples);
-
-    Composite<adouble> Deltas;
-    Deltas.add(&opcionCallDelta);
-
-    Composite<adouble> Theta;
-    Theta.add(&opcionPutTheta);
-
-    Composite<adouble> Vega;
-    Vega.add(&opcionCallVega);
-
-    adouble valor;
     stack.new_recording();
-    valor = SimpleMonteCarlo2(opcionCallVega, spot,sigma,interes, paths, samples);
-    valor.set_gradient(1.0);
+
+    auto start = std::chrono::high_resolution_clock::now();
+   adouble valoracionBase = SimpleMonteCarlo2(myOptions1,spot,sigma,interes,paths,samples);
+    //adouble valoracionBase = SimpleMonteCarlo2(opcionCallVega,spot,sigma,interes,paths,samples);
+    valoracionBase.set_gradient(1.0);
     stack.compute_adjoint();
 
-    stack.reverse();
+   // stack.reverse();
+
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> diff = end-start;
+    cout << "Tiempo de cálculo: "<<diff.count()<<" segundos"<< endl;
+
     std::cout << "Final list of gradients:\n";
     stack.print_gradients();
     cout<<endl;
-    //for (int i=0;i<3;++i){
-        cout<<"Gradiente Spot"<<0<<": "<<spot.get_gradient()/100000<<endl;
-        cout<<"Gradiente Sigma "<<1<<": "<<sigma.get_gradient()/100000<<endl;
-        cout<<"Gradiente Interes"<<2<<": "<<interes.get_gradient()/100000<<endl;
-   // }
-    cout<<"Vega "<<valor<<endl;
+   /* cout<<"Delta: "<<x[0].get_gradient()<<endl;
+    cout<<"Vega: "<<x[1].get_gradient()<<endl;
+    cout<<"Rho: "<<x[2].get_gradient()<<endl;*/
+
+    cout<<"Delta: "<<spot.get_gradient()<<endl;
+    cout<<"Vega: "<<sigma.get_gradient()<<endl;
+    cout<<"Rho: "<<interes.get_gradient()<<endl;
+
+    cout<<"Valoracion Portfolio: "<<valoracionBase<<endl;
 
 
-   /* valor = SimpleMonteCarlo2(Theta, 305.0, 0.25, 0.08, 100000, 12);
-    cout<<"Theta "<<valor<<endl;
-    valor = SimpleMonteCarlo2(Vega, 305.0, 0.25, 0.08, 100000, 12);
-    cout<<"Vega "<<valor<<endl;*/
-
-
-    ///Comprobacion Composite en release///
-    Call<adouble> opcionCallDelta1 (1,0.08,100,305,0.25,4.0);
-    Put<adouble> opcionPutTheta1 (1,0.08,300.0,305.0,0.25,4.0/12.0);
-    Call<adouble> opcionCallVega1 (1,0.08,300,305,0.25,4.0/12.0);
-
-    Composite<adouble> myOptions;
-    myOptions.add(&opcionCallDelta1);
-    myOptions.add(&opcionPutTheta1);
-    myOptions.add(&opcionCallVega1);
-
-    adouble result = SimpleMonteCarlo2(myOptions,spot,sigma,interes,100000,12);
-    cout<<"Portfolio: "<<result<<endl;
 
 }
