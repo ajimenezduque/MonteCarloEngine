@@ -24,9 +24,8 @@ using namespace adept;
 adouble SimpleMonteCarlo2(
         OptionGen<adouble> &option,
         const adouble Spot,
-        const adouble Vol,
+        const map<adouble,adouble> &Vol,
         const adouble r,
-        //const adouble x[3],
         unsigned long NumberOfPaths,
         unsigned long NumberOfSamples)
 {
@@ -45,21 +44,35 @@ adouble SimpleMonteCarlo2(
     // vector size =  NumberOfSamples + Spot
     std::vector<adouble> underlying_values(NumberOfSamples + 1,Spot); //x[0]);
 
-    adouble variance = Vol * Vol;//x[1] * x[1] ;
-    adouble rootVariance = sqrt(variance * dt);
+   // adouble variance = Vol * Vol;//x[1] * x[1] ;
+    //adouble rootVariance = sqrt(variance * dt);
 
-    adouble movedSpotFactor = exp((r - (0.5 * variance))*dt);
+    //adouble movedSpotFactor = exp((r - (0.5 * variance))*dt);
 
-    adouble value{};
     map<adouble,adouble> runningSum{};
-
 
     adouble thisGaussian {};
     adouble diffusion{};
     adouble drift{};
     map<adouble, adouble> thisPayoff{};
+    /*Otra variante
+     auto it = Vol.begin();
+     posIni = it->first;
+     posIni*/
+
     for (unsigned long i = 0; i < NumberOfPaths; i++) {
+        adouble posIni = 0;
         for (unsigned long j = 1; j < underlying_values.size(); j++) {
+             //double pos = (j * maxExpiry)/NumberOfSamples;
+             posIni = posIni +dt*j;
+             if(posIni > (Vol.rbegin())->first){
+                 posIni = Vol.rbegin()->first;
+             }
+             auto it = Vol.lower_bound(posIni);
+             cout<<"IT: "<<posIni<<" Frist: "<<it->first <<" Second: "<<it->second<<endl;
+             adouble variance = it->second * it->second;
+             adouble rootVariance = sqrt(variance * dt);
+             adouble movedSpotFactor = exp((r - (0.5 * variance))*dt);
              thisGaussian = normalDistribution(gen);
              diffusion = exp(rootVariance * thisGaussian);
              drift = underlying_values[j - 1] * movedSpotFactor;
@@ -72,7 +85,7 @@ adouble SimpleMonteCarlo2(
            runningSum[it->first] = runningSum[it->first] + (exp(-r * it->first) * (it->second));
         }
     }
-
+    adouble value{};
     for (auto it = runningSum.begin(); it != runningSum.end(); ++it) {
         // cout<< it->first << " => " << it->second << '\n';
         //value += (exp(-r * it->first) * (it->second / NumberOfPaths));
@@ -132,8 +145,13 @@ BOOST_AUTO_TEST_CASE(Test_OptionGenAdept){
 
     adouble interes = 0.08;
     adouble spot = 305.0;
-    adouble sigma = 0.25;
-    unsigned long paths = 10000;
+    //adouble sigma = 0.25;
+    map<adouble,adouble> sigma;
+    sigma[0.5] = 2.8;
+    sigma[1.0] = 3.0;
+    sigma[2.0] = 3.2;
+    sigma [2.5] = 3.4;
+    unsigned long paths = 1000;
     unsigned long samples = 365;
     vector<adouble> strikes {275,325,350};
     vector<double> vencimientos {4,3,2,4.0/12.0};
@@ -172,7 +190,10 @@ BOOST_AUTO_TEST_CASE(Test_OptionGenAdept){
     cout << "Tiempo de cálculo: "<<diff.count()<<" segundos"<< endl;
 
     cout<<"Delta: "<<spot.get_gradient()<<endl;
-    cout<<"Vega: "<<sigma.get_gradient()<<endl;
+    cout<<"Vega: "<<sigma[0.5].get_gradient()<<endl;
+    cout<<"Vega: "<<sigma[1.5].get_gradient()<<endl;
+    cout<<"Vega: "<<sigma[2.0].get_gradient()<<endl;
+    cout<<"Vega: "<<sigma[2.5].get_gradient()<<endl;
     cout<<"Rho: "<<interes.get_gradient()<<endl;
 
     cout<<"Valoracion Portfolio: "<<valoracionBase<<endl;
