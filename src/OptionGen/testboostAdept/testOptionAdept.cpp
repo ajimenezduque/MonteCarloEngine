@@ -64,7 +64,7 @@ adouble SimpleMonteCarlo2(
         adouble posIni = 0;
         for (unsigned long j = 1; j < underlying_values.size(); j++) {
              //double pos = (j * maxExpiry)/NumberOfSamples;
-             posIni = posIni +dt*j;
+             posIni = posIni + dt*j;
              if(posIni > (Vol.rbegin())->first){
                  posIni = Vol.rbegin()->first;
              }
