@@ -10,6 +10,8 @@
 #include <memory>
 #include <numeric>
 #include <adept.h>
+#include <map>
+#include <algorithm>
 
 using namespace std;
 enum optionType { call, put };
@@ -21,6 +23,70 @@ T normalCDF( T x){
     T result = erfc(-x / sqrt(2)) * 0.5;
     return result;
 }
+
+template <typename T>
+class OptionBS{
+public:
+    optionType tipo;
+    T interesAnual;
+    T strike;
+    T spot;
+    T sigma;
+    T tau;
+
+    T forward;
+    T factorDescuento;
+
+    OptionBS(optionType tipo,T interesAnual, T strike, T spot, T sigma, T tau):
+            tipo(tipo),interesAnual(interesAnual),strike(strike),spot(spot),sigma(sigma),tau(tau)
+    {
+        factorDescuento = exp(-interesAnual*tau);
+        forward = spot/factorDescuento;
+    }
+    T price(){
+        T dplus{};
+        T dminus{};
+        T sigma_sqr = sigma*sigma;
+        T inverseSigma = 1 / (sigma * sqrt(tau));
+        T logFK = log(forward/strike);
+        T medioSigma = 0.5 * sigma_sqr*tau;
+
+       // boost::math::normal normalDistribution;
+
+        dplus = inverseSigma*(logFK + medioSigma);
+        dminus = inverseSigma*(logFK - medioSigma);
+
+        //T distribucionPlus = boost::math::cdf(normalDistribution,dplus);
+        T distribucionPlus{};
+        //T distribucionMinus = boost::math::cdf(normalDistribution,dminus);
+        T distribucionMinus{};
+       // T negDistribucionPlus = boost::math::cdf(normalDistribution,-dplus);
+        T negDistribucionPlus{};
+       // T negDistribucionMinus = boost::math::cdf(normalDistribution,-dminus);
+        T negDistribucionMinus{};
+
+        T result{};
+        switch (tipo){
+            case call:
+                 distribucionPlus = normalCDF(dplus);
+                 distribucionMinus = normalCDF(dminus);
+                result = factorDescuento * ((distribucionPlus * forward) - (distribucionMinus * strike));
+                break;
+            case put:
+                dplus = -dplus; //correcion para que funcion con adept
+                dminus = -dminus;
+                 negDistribucionMinus = normalCDF(dminus);
+                 negDistribucionPlus = normalCDF(dplus);
+                result = factorDescuento * ((negDistribucionMinus * strike) - (negDistribucionPlus * forward));
+                break;
+            default:
+                cout<<"Error"<<endl;
+                result = -11111111;
+                break;
+        }
+        return result;
+    };
+};
 
 template <typename T>
 class OptionGen {
@@ -60,11 +126,6 @@ public:
         vectorInst.push_back(make_pair(elem->signo,elem));
     }
 
-    //vector<OptionGen<T> *> vectorInst;
-
-    /*void add (OptionGen<T> *elem){
-        vectorInst.push_back(elem);
-    }*/
 
     void remove( const unsigned int index )
     {
@@ -73,7 +134,7 @@ public:
         delete child;
     }
 
-    int compSize(){
+    unsigned long compSize(){
         return vectorInst.size();
     }
 
@@ -82,15 +143,13 @@ public:
         auto elem = get<1>(vectorInst[n]);
         return elem;
     }
-    //vector de pares<fecha,valor>
 
     //mapa <U, T>
     map<T,T> evaluate(vector<T> values, double criteria){
         map<T,T> result{};
         map<T,T> result2{};
-        //mezclar mapa de la opcion con mapa result //
+
         for(auto element : vectorInst){
-            //multiplicar por el signo de la opcion
 
             result2 = get<1>(element)->evaluate(values, criteria);
             for (auto it=result2.begin(); it!=result2.end(); ++it){
@@ -104,7 +163,6 @@ public:
                     }else {
                         result.insert(std::make_pair(it->first,it->second));
                     }
-                //result.insert(it->first,suma);
             }
         }
         return result;
@@ -123,7 +181,7 @@ public:
 template<typename T>
 class Greeks{
 public:
-    //variable de entrada
+
     optionType tipo;
     T interesAnual;
     T strike;
@@ -131,12 +189,11 @@ public:
     T sigma;
     double tau;
 
-//variables intermedias
     T forward;
     T factorDescuento;
 
     Greeks();
-    //Greeks(Greeks const &g);
+
     Greeks(optionType tipo,T interesAnual, T strike, T spot, T sigma, double tau):
             tipo(tipo),interesAnual(interesAnual),strike(strike),spot(spot),sigma(sigma),tau(tau)
     {
@@ -175,18 +232,11 @@ public:
         switch (tipo){
             case call:
                 distribucionMinus = normalCDF(dminus);
-                //distribucionMinus =  boost::math::cdf(normalDistribution,dminus);
-                //cout<<"Call Distribucion Minus: "<< distribucionMinus<<endl;
-                //normalCDF(dminus);
                 theta = -(spot*distribucionPrima*sigma)/(2*sqrt(tau)) - (interesAnual*strike*exp(-interesAnual*tau)*(distribucionMinus));
                 break;
             case put:
                 dminus = -dminus; ///correcion para adouble no permite pasar parametro negativo a la funcion
                 distribucionMinus = normalCDF(dminus);
-                // distribucionMinus =  boost::math::cdf(normalDistribution,-dminus);
-                //cout<<" Put Distribucion Minus: "<< distribucionMinus<<endl;
-                //normalCDF(-dminus);
-                //CFD(-dminus);
                 theta = -((spot*distribucionPrima*sigma)/(2*sqrt(tau))) + (interesAnual*strike*exp(-interesAnual*tau)*(distribucionMinus));
                 break;
             default:
@@ -205,7 +255,6 @@ public:
         dplus = inverseSigma*(logFK + medioSigma);
         boost::math::normal normalDistribution;
         delta = normalCDF(dplus);
-        //delta = boost::math::cdf(normalDistribution,dplus);
         switch (tipo){
             case call:
                 break;
@@ -218,6 +267,32 @@ public:
         }
         return delta;
     };
+    T rho(){
+        T delta{};
+        T dplus{};
+        T dminus{};
+        T rho{};
+        T logFK = log(forward/strike);
+        T inverseSigma = 1 / (sigma * sqrt(tau));
+        T medioSigma = 0.5 * sigma*sigma*tau;
+        dplus = inverseSigma*(logFK + medioSigma);
+        dminus = inverseSigma*(logFK - medioSigma);
+        boost::math::normal normalDistribution;
+
+        switch (tipo){
+            case call:
+                rho = strike * tau * exp(-interesAnual*tau) * normalCDF(dminus);
+                break;
+            case put:
+                dminus = -dminus;
+                rho = -strike * tau * exp(-interesAnual*tau) * normalCDF(dminus);
+                break;
+            default:
+                //cout<<"Error"<<endl;
+                break;
+        }
+        return rho;
+    };
 
 };
 
@@ -225,7 +300,6 @@ template<typename T>
 class Call: public OptionGen<T> {
 public:
     Greeks<T> griegas;
-//variable de entrada
     int signo;
     T interesAnual;
     T strike;
@@ -233,7 +307,6 @@ public:
     T sigma;
     double tau;
 
-//variables intermedias
     T forward;
     T factorDescuento;
 
@@ -244,11 +317,8 @@ public:
         forward = spot/factorDescuento;
     }
     Call();
-    // double price(double interesAnual,double strike, double spot, double sigma, double tau);
 
-    //añadir frecuencia de muestreo
     map<T,T> evaluate(vector<T> values, double criteria){
-        //acumular en el mapa todos los prices
         map<T,T> price{};
         unsigned long  posicion = getExpiry()*criteria;
         price.insert(std::make_pair(tau,signo*max(values.at(posicion) - strike,0.0)));
@@ -265,7 +335,6 @@ template<typename T>
 class Put: public OptionGen<T> {
 public:
     Greeks<T> griegas;
-//variable de entrada
     int signo;
     T interesAnual;
     T strike;
@@ -273,7 +342,6 @@ public:
     T sigma;
     double tau;
 
-//variables intermedias
     T forward;
     T factorDescuento;
 
@@ -285,10 +353,8 @@ public:
     }
     Put();
 
-    //dev0olver  mapa <U, T>
     map<T,T> evaluate(vector<T> values, double criteria){
         map<T,T> price{};
-        //getExpiry como T no se puede cambiado en todos lados
         unsigned long posicion = getExpiry()*criteria;
         price.insert(make_pair(tau,signo*max(strike - values.at(posicion),0.0)));
 
@@ -304,27 +370,31 @@ class Asian: public Decorator<T>{
 public:
     asianType tipo;
 
-    Asian(T interesAnual,T strike, T spot, T sigma, T tau);
 
-    Asian(asianType tipo,Call<T> *optionCall):tipo(tipo),Decorator<T>(optionCall){}
+    Asian(asianType tipo,Call<T> *optionCall):tipo(tipo),Decorator<T>(optionCall){};
 
-    Asian(asianType tipo,Put<T> *optionPut):tipo(tipo),Decorator<T>(optionPut){}
+    Asian(asianType tipo,Put<T> *optionPut):tipo(tipo),Decorator<T>(optionPut){};
 
-    T evaluate(vector<T> values, double criteria){
-        T v{};
-        vector<T> result;
-        //obtengo el valor a recuperar (tau*criteria)/maxExpiry
-        T posicion = (Decorator<T>::innerOption->getExpiry()*criteria);
+    map<T,T> evaluate(vector<T> values, double criteria){
+        map<T,T> price{};
+        double tau = getExpiry();
+        unsigned long posicion = (tau*criteria);
+        vector<T> result(values.size());
+
+        for (unsigned long i = 0;i<=values.size();++i){
+            result[i] = values[i];
+        }
         if(!values.empty()) {
             if (tipo == max_) {
-                auto it = max_element(values.begin(), values.at(posicion));
-                result.push_back(*it);
+                auto it = max_element(values.begin(),values.end());
+                result[posicion] = *it;
             } else if (tipo == min_) {
-                auto it = min_element(values.begin(), values.at(posicion));
-                result.push_back(*it);
+                 auto it = min_element(values.begin(), values.end());
+                result[posicion] = *it;
             } else if (tipo == avg_) {
-                v = accumulate(values.begin(), values.at(posicion), 0.0) / values.size();
-                result.push_back(v);
+                T init = 0.0;
+                auto it = std::accumulate(values.begin(), values.end(), init) / values.size();
+                result[posicion] = it;
             } else {
                 // cout << "ERROR" << endl;
             }
@@ -332,9 +402,8 @@ public:
             //cout << "VectorValues vacio" << endl;
         }
 
-        v=Decorator<T>::innerOption->evaluate(result,criteria);
-        //v=Decorator<T>::evaluate(values);
-        return v;
+        price = Decorator<T>::innerOption->evaluate(result,criteria);
+        return price;
     };
     double getExpiry(){
         return Decorator<T>::innerOption->getExpiry();
