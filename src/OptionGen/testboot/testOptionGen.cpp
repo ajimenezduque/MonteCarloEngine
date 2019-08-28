@@ -73,7 +73,6 @@ double SimpleMonteCarlo2(
 
     return value/NumberOfPaths;
 }
-
 BOOST_AUTO_TEST_CASE(Test_OptionGen_Portfolio){
     BOOST_TEST_MESSAGE("Se ejecuta test de valoración para un portfolio de opciones.");
     cout<<"///************TEST****************////"<<endl;
@@ -275,10 +274,9 @@ BOOST_AUTO_TEST_CASE(Test_OptionGen_Asian){
     unsigned long samples = 365;
 
     ///Prueba calculo con opciones Asiaticas
-
-  Asian<double> optionAsian1(avg_,new Call<double>(1,0.08,300.0,305.0,0.25,4));
-  Asian<double> *optionAsian2 = new Asian<double>(max_,new Call<double>(1,0.08,300.0,305.0,0.25,4));
-  Asian<double> *optionAsian3 = new Asian<double>(min_,new Call<double>(1,0.08,300.0,305.0,0.25,4));
+    Asian<double> optionAsian1(avg_,new Call<double>(1,0.08,300.0,305.0,0.25,4));
+    Asian<double> *optionAsian2 = new Asian<double>(max_,new Call<double>(1,0.08,300.0,305.0,0.25,4));
+    Asian<double> *optionAsian3 = new Asian<double>(min_,new Call<double>(1,0.08,300.0,305.0,0.25,4));
     Composite<double> myOptions1;
     myOptions1.add(&optionAsian1);
     myOptions1.add(optionAsian2);

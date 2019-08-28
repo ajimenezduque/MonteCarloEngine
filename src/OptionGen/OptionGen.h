@@ -1,7 +1,6 @@
 //
 // Created by alejandro on 10/07/19.
 //
-//añado comentario de prueba jenkins
 #ifndef MONTECARLOENGINE_OPTIONGEN_H
 #define MONTECARLOENGINE_OPTIONGEN_H
 
@@ -19,7 +18,6 @@ enum asianType {max_, min_, avg_};
 
 template <typename T>
 T normalCDF( T x){
-   // cout<<"normalCDF: "<<erfc(-x / sqrt(2))*0.5<<endl;
     T result = erfc(-x / sqrt(2)) * 0.5;
     return result;
 }
@@ -51,18 +49,12 @@ public:
         T logFK = log(forward/strike);
         T medioSigma = 0.5 * sigma_sqr*tau;
 
-       // boost::math::normal normalDistribution;
-
         dplus = inverseSigma*(logFK + medioSigma);
         dminus = inverseSigma*(logFK - medioSigma);
 
-        //T distribucionPlus = boost::math::cdf(normalDistribution,dplus);
         T distribucionPlus{};
-        //T distribucionMinus = boost::math::cdf(normalDistribution,dminus);
         T distribucionMinus{};
-       // T negDistribucionPlus = boost::math::cdf(normalDistribution,-dplus);
         T negDistribucionPlus{};
-       // T negDistribucionMinus = boost::math::cdf(normalDistribution,-dminus);
         T negDistribucionMinus{};
 
         T result{};

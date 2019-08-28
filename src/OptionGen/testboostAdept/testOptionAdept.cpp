@@ -1,6 +1,3 @@
-//
-// Created by alejandro on 22/07/19.
-//
 
 //
 // Created by alejandro on 10/07/19.
@@ -20,7 +17,6 @@
 using namespace std;
 using namespace adept;
 
-//double
 adouble SimpleMonteCarlo2(
         OptionGen<adouble> &option,
         const adouble Spot,
@@ -235,7 +231,6 @@ BOOST_AUTO_TEST_CASE(Test_OptionGenAdept_Asian){
     sigma_map [2.5] = sigma;
     unsigned long paths = 10000;
     unsigned long samples = 365;
-
 
     Asian<adouble> optionAsian1(avg_,new Call<adouble>(1,0.08,300.0,305.0,0.25,4));
     Asian<adouble> *optionAsian2 = new Asian<adouble>(max_,new Call<adouble>(1,0.08,300.0,305.0,0.25,4));
