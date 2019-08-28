@@ -191,6 +191,7 @@ BOOST_AUTO_TEST_CASE(Test_OptionGenAdept_OpcionBS){
     unsigned long paths = 10000;
     unsigned long samples = 365;
 
+
     Call<adouble> opcionCallVega(1,interes, strike, spot,sigma, 4.0 / 12.0);
     cout<<"Delta: "<<opcionCallVega.griegas.delta()<<endl;
     cout<<"Vega: "<<opcionCallVega.griegas.vega()<<endl;
@@ -244,11 +245,9 @@ BOOST_AUTO_TEST_CASE(Test_OptionGenAdept_Asian){
     myOptions1.add(optionAsian2);
     myOptions1.add(optionAsian3);
     stack.new_recording();
-
     adouble valoracionAsian = SimpleMonteCarlo2(myOptions1,spot,sigma_map,interes,paths,samples);
     valoracionAsian.set_gradient(1.0);
     stack.compute_adjoint();
-
     cout<<"Valoracion Asiaticas: "<<valoracionAsian<<endl;
 
     cout<<"Delta: "<<spot.get_gradient()<<endl;

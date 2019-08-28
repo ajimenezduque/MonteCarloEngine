@@ -212,6 +212,7 @@ BOOST_AUTO_TEST_CASE(Test_OptionGen_OpcionBS){
     unsigned long samples = 365;
 
     ///Prueba calculo de sensibilidades con unica opcion
+
     Call<double> opcionCallVega(1,interes, strike, spot, sigma, 4.0 / 12.0);
     cout<<"Delta: "<<opcionCallVega.griegas.delta()<<endl;
     cout<<"Vega: "<<opcionCallVega.griegas.vega()<<endl;
@@ -284,4 +285,5 @@ BOOST_AUTO_TEST_CASE(Test_OptionGen_Asian){
     myOptions1.add(optionAsian3);
     double valoracionAsian = SimpleMonteCarlo2(myOptions1,spot,sigma_map,interes,paths,samples);
     cout<<"Valoracion Asiaticas: "<<valoracionAsian<<endl;
+
 }
