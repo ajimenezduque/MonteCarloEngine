@@ -112,12 +112,14 @@ public:
 template <typename T>
 class Composite: public OptionGen<T>{
 public:
-    vector<std::pair<int, OptionGen<T> *>> vectorInst;
-
-    void add (OptionGen<T> *elem){
+   // vector<std::pair<int, OptionGen<T> *>> vectorInst;
+   vector<OptionGen<T> *> vectorInst;
+  /*  void add (OptionGen<T> *elem){
         vectorInst.push_back(make_pair(elem->signo,elem));
-    }
-
+    }*/
+  void add (OptionGen<T> *elem){
+      vectorInst.push_back(elem);
+  }
 
     void remove( const unsigned int index )
     {
@@ -129,25 +131,28 @@ public:
     unsigned long compSize(){
         return vectorInst.size();
     }
-
-
     OptionGen<T> *getOptionGen (int n){
-        auto elem = get<1>(vectorInst[n]);
+        auto elem =vectorInst[n];
         return elem;
     }
+
+    /*OptionGen<T> *getOptionGen (int n){
+        auto elem = get<1>(vectorInst[n]);
+        return elem;
+    }*/
 
     //mapa <U, T>
     map<T,T> evaluate(vector<T> values, double criteria){
         map<T,T> result{};
-        map<T,T> result2{};
-
+        map<T,T> resultElement{};
+        T suma{};
+        T fecha{};
         for(auto element : vectorInst){
-
-            result2 = get<1>(element)->evaluate(values, criteria);
-            for (auto it=result2.begin(); it!=result2.end(); ++it){
+            resultElement = element->evaluate(values, criteria);
+            for (auto it=resultElement.begin(); it!=resultElement.end(); ++it) {
+                 //result[it->first] = result[it->first] + it->second; //adept no realiza la sensibilidad correctamente de esta forma
                     auto f = result.find(it->first);
                     if(f != result.end()){
-                        //multiplicar por signo
                         T suma{};
                         suma = f->second + it->second;
                         result.erase(f);
@@ -163,11 +168,10 @@ public:
     double  getExpiry(){
         double  maxExpiry = 0.0;
         for (const auto element : vectorInst){
-            maxExpiry = max(maxExpiry,get<1>(element)->getExpiry());
+            maxExpiry = max(maxExpiry,element->getExpiry());
         }
         return maxExpiry;
     }
-
 };
 
 template<typename T>
@@ -372,26 +376,33 @@ public:
         double tau = getExpiry();
         unsigned long posicion = (tau*criteria);
         vector<T> result(values.size());
-
+        auto itpos = values.begin();
         for (unsigned long i = 0;i<=values.size();++i){
             result[i] = values[i];
-        }
-        if(!values.empty()) {
-            if (tipo == max_) {
-                auto it = max_element(values.begin(),values.end());
-                result[posicion] = *it;
-            } else if (tipo == min_) {
-                 auto it = min_element(values.begin(), values.end());
-                result[posicion] = *it;
-            } else if (tipo == avg_) {
-                T init = 0.0;
-                auto it = std::accumulate(values.begin(), values.end(), init) / values.size();
-                result[posicion] = it;
-            } else {
-                // cout << "ERROR" << endl;
+            if((*itpos) != values[posicion]){
+                ++itpos;
             }
-        }else{
-            //cout << "VectorValues vacio" << endl;
+        }
+        try {
+            if (!values.empty()) {
+                if (tipo == max_) {
+                    auto it = max_element(values.begin(), itpos);
+                    result[posicion] = *it;
+                } else if (tipo == min_) {
+                    auto it = min_element(values.begin(), itpos);
+                    result[posicion] = *it;
+                } else if (tipo == avg_) {
+                    T init = 0.0;
+                    auto it = std::accumulate(values.begin(), itpos, init) / values.size();
+                    result[posicion] = it;
+                } else {
+                    __throw_bad_exception();
+                }
+            } else {
+                __throw_bad_exception();
+            }
+        }catch ( exception& e){
+            cout << "ERROR" << endl;
         }
 
         price = Decorator<T>::innerOption->evaluate(result,criteria);

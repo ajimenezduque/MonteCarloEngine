@@ -44,7 +44,7 @@ double SimpleMonteCarlo2(
     for (unsigned long i = 0; i < NumberOfPaths; i++) {
         double posIni = 0;
         for (unsigned long j = 1; j < underlying_values.size(); j++) {
-            posIni = posIni + dt*j;
+            posIni = dt*j;
             if(posIni > (Vol.rbegin())->first){
                 posIni = Vol.rbegin()->first;
             }
@@ -81,10 +81,10 @@ BOOST_AUTO_TEST_CASE(Test_OptionGen_Portfolio){
     double spot = 305;
     double sigma = 0.25;
     map<double,double> sigma_map;
-    sigma_map[0.5] = 2.8;
-    sigma_map[1.0] = 3.0;
-    sigma_map[2.0] = 3.2;
-    sigma_map [2.5] = 3.4;
+    sigma_map[0.5] = 0.25;
+    sigma_map[1.0] = 0.30;
+    sigma_map[2.0] = 0.33;
+    sigma_map [2.5] = 0.35;
     unsigned long paths = 10000;
     unsigned long samples = 365;
     vector<double> strikes {275,325,350};
@@ -97,10 +97,10 @@ BOOST_AUTO_TEST_CASE(Test_OptionGen_Portfolio){
      for(int i = 0;i < vencimientos.size();++i){
          for(int j = 0; j < strikes.size();++j){
              if(par%2 == 0){
-                 Call<double> *option = new Call<double>(1,interes,strikes[j],spot,interes,vencimientos[i]);
+                 Call<double> *option = new Call<double>(1,interes,strikes[j],spot,sigma,vencimientos[i]);
                  myOptions1.add(option);
              }else{
-                 Put<double> *option = new Put<double>(1,interes,strikes[j],spot,interes,vencimientos[i]);
+                 Put<double> *option = new Put<double>(1,interes,strikes[j],spot,sigma,vencimientos[i]);
                  myOptions1.add(option);
              }
                  par++;
@@ -115,16 +115,16 @@ BOOST_AUTO_TEST_CASE(Test_OptionGen_Portfolio){
 
     sigma_map[0.5] = sigma_map[0.5] + deltaPrice;
     double bumpedVol = SimpleMonteCarlo2(myOptions1,spot,sigma_map,interes,paths,samples);
-    sigma_map[0.5] = 2.8;
+    sigma_map[0.5] = 0.25;
     sigma_map[1.0] = sigma_map[1.0] + deltaPrice;
     double bumpedVol2 = SimpleMonteCarlo2(myOptions1,spot,sigma_map,interes,paths,samples);
-    sigma_map[1.0] = 3.0;
+    sigma_map[1.0] =  0.30;
     sigma_map[2.0] = sigma_map[2.0] + deltaPrice;
     double bumpedVol3 = SimpleMonteCarlo2(myOptions1,spot,sigma_map,interes,paths,samples);
-    sigma_map[2.0] = 3.2;
+    sigma_map[2.0] =  0.33;
     sigma_map[2.5] = sigma_map[2.5] + deltaPrice;
     double bumpedVol4 = SimpleMonteCarlo2(myOptions1,spot,sigma_map,interes,paths,samples);
-    sigma_map [2.5] = 3.4;
+    sigma_map [2.5] =  0.35;
     double bumpedInt = SimpleMonteCarlo2(myOptions1,spot,sigma_map,interes + deltaPrice,paths,samples);
 
     auto end = std::chrono::high_resolution_clock::now();
@@ -149,10 +149,10 @@ BOOST_AUTO_TEST_CASE(Test_OptionGen_Opcion){
     double strike = 300;
     double sigma = 0.25;
     map<double,double> sigma_map;
-    sigma_map[0.5] = 2.8;
-    sigma_map[1.0] = 3.0;
-    sigma_map[2.0] = 3.2;
-    sigma_map[2.5] = 3.4;
+    sigma_map[0.1] = 0.25;
+    sigma_map[0.2] = 0.30;
+    sigma_map[0.3] = 0.33;
+    sigma_map [0.4] = 0.35;
     unsigned long paths = 10000;
     unsigned long samples = 365;
 
@@ -167,18 +167,18 @@ BOOST_AUTO_TEST_CASE(Test_OptionGen_Opcion){
 
     double bumpedSpot = SimpleMonteCarlo2(opcionCallVega,spot + deltaPrice,sigma_map,interes,paths,samples);
 
-    sigma_map[0.5]=sigma_map[0.5] + deltaPrice;
+    sigma_map[0.1] = sigma_map[0.1] + deltaPrice;
     double bumpedVol = SimpleMonteCarlo2(opcionCallVega,spot,sigma_map,interes,paths,samples);
-    sigma_map[0.5] = 2.8;
-    sigma_map[1.0] = sigma_map[1.0] + deltaPrice;
+    sigma_map[0.1] = 0.25;
+    sigma_map[0.2] = sigma_map[0.2] + deltaPrice;
     double bumpedVol2 = SimpleMonteCarlo2(opcionCallVega,spot,sigma_map,interes,paths,samples);
-    sigma_map[1.0] = 3.0;
-    sigma_map[2.0] = sigma_map[2.0] + deltaPrice;
+    sigma_map[0.2] = 0.30;
+    sigma_map[0.3] = sigma_map[0.3] + deltaPrice;
     double bumpedVol3 = SimpleMonteCarlo2(opcionCallVega,spot,sigma_map,interes,paths,samples);
-    sigma_map[2.0] = 3.2;
-    sigma_map[2.5] = sigma_map[2.5] + deltaPrice;
+    sigma_map[0.3] = 0.33;
+    sigma_map[0.4] = sigma_map[0.4] + deltaPrice;
     double bumpedVol4 = SimpleMonteCarlo2(opcionCallVega,spot,sigma_map,interes,paths,samples);
-    sigma_map [2.5] = 3.4;
+    sigma_map [0.4] = 0.35;
 
     double bumpedInt = SimpleMonteCarlo2(opcionCallVega,spot,sigma_map,interes + deltaPrice,paths,samples);
 
@@ -191,7 +191,7 @@ BOOST_AUTO_TEST_CASE(Test_OptionGen_Opcion){
     cout<<"Vega Bumped4: "<< ((bumpedVol4 - valoracionBase)/deltaPrice)<<endl;
 
     cout<<"Rho Bumped: "<< ((bumpedInt - valoracionBase)/deltaPrice)<<endl;
-    cout<<"Valoracion Portfolio: "<<valoracionBase<<endl;
+    cout<<"Valoracion Opción: "<<valoracionBase<<endl;
     cout << "Tiempo de cálculo: "<<diff_seconds.count()<<" segundos"<< endl;
 
 }
@@ -212,11 +212,11 @@ BOOST_AUTO_TEST_CASE(Test_OptionGen_OpcionBS){
 
     ///Prueba calculo de sensibilidades con unica opcion
 
-    Call<double> opcionCallVega(1,interes, strike, spot, sigma, 4.0 / 12.0);
+    Call<double> opcionCallVega(1,interes, strike, spot, sigma, 2.5);
     cout<<"Delta: "<<opcionCallVega.griegas.delta()<<endl;
     cout<<"Vega: "<<opcionCallVega.griegas.vega()<<endl;
     cout<<"Rho: "<<opcionCallVega.griegas.rho()<<endl;
-    OptionBS <double> opcionBS (call,interes,strike,spot,sigma, 4.0/12.0);
+    OptionBS <double> opcionBS (call,interes,strike,spot,sigma, 2.5);
     cout<<"OptionBS Price:" <<opcionBS.price()<<endl;
 
     auto start = std::chrono::high_resolution_clock::now();

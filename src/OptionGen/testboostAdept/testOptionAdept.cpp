@@ -45,7 +45,7 @@ adouble SimpleMonteCarlo2(
     for (unsigned long i = 0; i < NumberOfPaths; i++) {
         adouble posIni = 0;
         for (unsigned long j = 1; j < underlying_values.size(); j++) {
-             posIni = posIni + dt*j;
+             posIni = dt*j;
              if(posIni > (Vol.rbegin())->first){
                  posIni = Vol.rbegin()->first;
              }
@@ -76,7 +76,7 @@ adouble SimpleMonteCarlo2(
 }
 
 BOOST_AUTO_TEST_CASE(Test_OptionGenAdept_Portfolio){
-    BOOST_TEST_MESSAGE("Se ejecuta test opcion Put y call, comprobando pricing y griegas con BS y con MC");
+    BOOST_TEST_MESSAGE("Se ejecuta test de valoración para un portfolio de opciones.");
     cout<<"///************TEST****************////"<<endl;
 
     Stack stack;
@@ -86,10 +86,10 @@ BOOST_AUTO_TEST_CASE(Test_OptionGenAdept_Portfolio){
     adouble spot = 305.0;
     //adouble sigma = 0.25;
     map<adouble,adouble> sigma;
-    sigma[0.5] = 2.8;
-    sigma[1.0] = 3.0;
-    sigma[2.0] = 3.2;
-    sigma [2.5] = 3.4;
+    sigma[0.5] = 0.25;
+    sigma[1.0] = 0.30;
+    sigma[2.0] = 0.33;
+    sigma [2.5] = 0.35;
     unsigned long paths = 10000;
     unsigned long samples = 365;
     vector<adouble> strikes {275,325,350};
@@ -131,7 +131,7 @@ BOOST_AUTO_TEST_CASE(Test_OptionGenAdept_Portfolio){
 
 }
 BOOST_AUTO_TEST_CASE(Test_OptionGenAdept_Opcion){
-    BOOST_TEST_MESSAGE("Se ejecuta test opcion Put y call, comprobando pricing y griegas con BS y con MC");
+    BOOST_TEST_MESSAGE("Se ejecuta test de valoración para una opción");
     cout<<"///************TEST****************////"<<endl;
 
     Stack stack;
@@ -141,10 +141,10 @@ BOOST_AUTO_TEST_CASE(Test_OptionGenAdept_Opcion){
     adouble sigma = 0.25;
     adouble strike = 300;
     map<adouble,adouble> sigma_map;
-    sigma_map[0.5] = 2.8;
-    sigma_map[1.0] = 3.0;
-    sigma_map[2.0] = 3.2;
-    sigma_map [2.5] = 3.4;
+    sigma_map[0.1] = 0.25;
+    sigma_map[0.2] = 0.30;
+    sigma_map[0.3] = 0.33;
+    sigma_map [0.4] = 0.35;
     unsigned long paths = 10000;
     unsigned long samples = 365;
 
@@ -162,10 +162,10 @@ BOOST_AUTO_TEST_CASE(Test_OptionGenAdept_Opcion){
     cout << "Tiempo de cálculo: "<<diff_seconds.count()<<" segundos"<< endl;
 
     cout<<"Delta: "<<spot.get_gradient()<<endl;
-    cout<<"Vega: "<<sigma_map[0.5].get_gradient()<<endl;
-    cout<<"Vega: "<<sigma_map[1.0].get_gradient()<<endl;
-    cout<<"Vega: "<<sigma_map[2.0].get_gradient()<<endl;
-    cout<<"Vega: "<<sigma_map[2.5].get_gradient()<<endl;
+    cout<<"Vega: "<<sigma_map[0.1].get_gradient()<<endl;
+    cout<<"Vega: "<<sigma_map[0.2].get_gradient()<<endl;
+    cout<<"Vega: "<<sigma_map[0.3].get_gradient()<<endl;
+    cout<<"Vega: "<<sigma_map[0.4].get_gradient()<<endl;
     cout<<"Rho: "<<interes.get_gradient()<<endl;
 
     cout<<"Valoracion Opcion: "<<valoracionBase<<endl;
@@ -188,11 +188,11 @@ BOOST_AUTO_TEST_CASE(Test_OptionGenAdept_OpcionBS){
     unsigned long samples = 365;
 
 
-    Call<adouble> opcionCallVega(1,interes, strike, spot,sigma, 4.0 / 12.0);
+    Call<adouble> opcionCallVega(1,interes, strike, spot,sigma, 2.5);
     cout<<"Delta: "<<opcionCallVega.griegas.delta()<<endl;
     cout<<"Vega: "<<opcionCallVega.griegas.vega()<<endl;
     cout<<"Rho: "<<opcionCallVega.griegas.rho()<<endl;
-    OptionBS <adouble> opcionBS (call,interes,strike,spot,sigma, 4.0/12.0);
+    OptionBS <adouble> opcionBS (call,interes,strike,spot,sigma, 2.5);
     cout<<"OptionBS Price:" <<opcionBS.price()<<endl;
 
     stack.new_recording();
@@ -216,7 +216,7 @@ BOOST_AUTO_TEST_CASE(Test_OptionGenAdept_OpcionBS){
     cout<<"Valoracion Opcion: "<<valoracionBase<<endl;
 }
 BOOST_AUTO_TEST_CASE(Test_OptionGenAdept_Asian){
-    BOOST_TEST_MESSAGE("Se ejecuta test opcion Asiatica");
+    BOOST_TEST_MESSAGE("Se ejecuta test opción Asiatica");
     cout<<"///************TEST****************////"<<endl;
     Stack stack;
 
