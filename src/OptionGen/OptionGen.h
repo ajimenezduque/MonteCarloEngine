@@ -1,6 +1,6 @@
 //
 // Created by alejandro on 10/07/19.
-//
+// Refactor 2020
 #ifndef MONTECARLOENGINE_OPTIONGEN_H
 #define MONTECARLOENGINE_OPTIONGEN_H
 
@@ -13,17 +13,28 @@
 #include <algorithm>
 
 using namespace std;
-enum optionType { call, put };
-enum asianType {max_, min_, avg_};
+enum optionType
+{
+    call,
+    put
+};
+enum asianType
+{
+    max_,
+    min_,
+    avg_
+};
 
 template <typename T>
-T normalCDF( T x){
+T normalCDF(T x)
+{
     T result = erfc(-x / sqrt(2)) * 0.5;
     return result;
 }
 
 template <typename T>
-class OptionBS{
+class OptionBS
+{
 public:
     optionType tipo;
     T interesAnual;
@@ -35,22 +46,24 @@ public:
     T forward;
     T factorDescuento;
 
-    OptionBS(optionType tipo,T interesAnual, T strike, T spot, T sigma, T tau):
-            tipo(tipo),interesAnual(interesAnual),strike(strike),spot(spot),sigma(sigma),tau(tau)
+    OptionBS(optionType tipo, T interesAnual, T strike, T spot, T sigma, T tau): 
+    tipo(tipo), interesAnual(interesAnual), strike(strike), 
+    spot(spot), sigma(sigma), tau(tau)
     {
-        factorDescuento = exp(-interesAnual*tau);
-        forward = spot/factorDescuento;
+        factorDescuento = exp(-interesAnual * tau);
+        forward = spot / factorDescuento;
     }
-    T price(){
+    T price()
+    {
         T dplus{};
         T dminus{};
-        T sigma_sqr = sigma*sigma;
+        T sigma_sqr = sigma * sigma;
         T inverseSigma = 1 / (sigma * sqrt(tau));
-        T logFK = log(forward/strike);
-        T medioSigma = 0.5 * sigma_sqr*tau;
+        T logFK = log(forward / strike);
+        T medioSigma = 0.5 * sigma_sqr * tau;
 
-        dplus = inverseSigma*(logFK + medioSigma);
-        dminus = inverseSigma*(logFK - medioSigma);
+        dplus = inverseSigma * (logFK + medioSigma);
+        dminus = inverseSigma * (logFK - medioSigma);
 
         T distribucionPlus{};
         T distribucionMinus{};
@@ -58,81 +71,96 @@ public:
         T negDistribucionMinus{};
 
         T result{};
-        switch (tipo){
-            case call:
-                 distribucionPlus = normalCDF(dplus);
-                 distribucionMinus = normalCDF(dminus);
-                result = factorDescuento * ((distribucionPlus * forward) - (distribucionMinus * strike));
-                break;
-            case put:
-                dplus = -dplus; //correcion para que funcion con adept
-                dminus = -dminus;
-                 negDistribucionMinus = normalCDF(dminus);
-                 negDistribucionPlus = normalCDF(dplus);
-                result = factorDescuento * ((negDistribucionMinus * strike) - (negDistribucionPlus * forward));
-                break;
-            default:
-                cout<<"Error"<<endl;
-                result = -11111111;
-                break;
+        switch (tipo)
+        {
+        case call:
+            distribucionPlus = normalCDF(dplus);
+            distribucionMinus = normalCDF(dminus);
+            result = factorDescuento * (
+                (distribucionPlus * forward) - (distribucionMinus * strike)
+                );
+            break;
+        case put:
+            dplus = -dplus; //correcion para que funcion con adept
+            dminus = -dminus;
+            negDistribucionMinus = normalCDF(dminus);
+            negDistribucionPlus = normalCDF(dplus);
+            result = factorDescuento * (
+                (negDistribucionMinus * strike) 
+                - (negDistribucionPlus * forward)
+                );
+            break;
+        default:
+            cout << "Error" << endl;
+            result = -11111111;
+            break;
         }
         return result;
     };
 };
 
 template <typename T>
-class OptionGen {
+class OptionGen
+{
 public:
-    virtual OptionGen<T> *getOptionGen( int )
+    virtual shared_ptr<OptionGen<T>> getOptionGen(int)
     {
         return 0;
     }
 
     int signo;
 
-    virtual map<T,T> evaluate(vector<T> values, double criteria) = 0;
+    virtual map<T, T> evaluate(vector<T> values, double criteria) = 0;
     virtual double getExpiry() = 0;
 };
 
 template <typename T>
-class Decorator: public OptionGen<T>{
+class Decorator : public OptionGen<T>
+{
 public:
-    explicit Decorator (OptionGen<T> * optionAbstract){
+    explicit Decorator(shared_ptr<OptionGen<T>> optionAbstract)
+    {
         innerOption = optionAbstract;
     }
-    OptionGen<T>* innerOption;
-    map<T,T> evaluate(vector<T> values, double criteria){
-        innerOption->evaluate(values,criteria);
+    shared_ptr<OptionGen<T>> innerOption;
+    map<T, T> evaluate(vector<T> values, double criteria)
+    {
+        innerOption->evaluate(values, criteria);
     };
-    double getExpiry(){
+    double getExpiry()
+    {
         innerOption->getExpiry();
     }
 };
 
 template <typename T>
-class Composite: public OptionGen<T>{
+class Composite : public OptionGen<T>
+{
 public:
-   // vector<std::pair<int, OptionGen<T> *>> vectorInst;
-   vector<OptionGen<T> *> vectorInst;
-  /*  void add (OptionGen<T> *elem){
+    // vector<std::pair<int, OptionGen<T> *>> vectorInst;
+    vector<shared_ptr<OptionGen<T>>> vectorInst;
+    /*  void add (OptionGen<T> *elem){
         vectorInst.push_back(make_pair(elem->signo,elem));
     }*/
-  void add (OptionGen<T> *elem){
-      vectorInst.push_back(elem);
-  }
-
-    void remove( const unsigned int index )
+    void add(shared_ptr<OptionGen<T>> elem)
     {
-        OptionGen<T> *child = vectorInst[ index ];
-        vectorInst.erase( vectorInst.begin() + index );
+        vectorInst.push_back(elem);
+    }
+
+    void remove(const unsigned int index)
+    {
+        shared_ptr<OptionGen<T>> child = vectorInst[index];
+        vectorInst.erase(vectorInst.begin() + index);
         delete child;
     }
 
-    unsigned long compSize(){
+    unsigned long compSize()
+    {
         return vectorInst.size();
     }
-    OptionGen<T> *getOptionGen (int n){
-        auto elem =vectorInst[n];
+    shared_ptr<OptionGen<T>> getOptionGen(int n)
+    {
+        auto elem = vectorInst[n];
         return elem;
     }
 
@@ -142,42 +170,50 @@ public:
     }*/
 
     //mapa <U, T>
-    map<T,T> evaluate(vector<T> values, double criteria){
-        map<T,T> result{};
-        map<T,T> resultElement{};
+    map<T, T> evaluate(vector<T> values, double criteria)
+    {
+        map<T, T> result{};
+        map<T, T> resultElement{};
         T suma{};
         T fecha{};
-        for(auto element : vectorInst){
+        for (auto element : vectorInst)
+        {
             resultElement = element->evaluate(values, criteria);
-            for (auto it=resultElement.begin(); it!=resultElement.end(); ++it) {
-                 //result[it->first] = result[it->first] + it->second; //adept no realiza la sensibilidad correctamente de esta forma
-                    auto f = result.find(it->first);
-                    if(f != result.end()){
-                        T suma{};
-                        suma = f->second + it->second;
-                        result.erase(f);
-                        result.insert (std::make_pair(it->first,suma));
-                    }else {
-                        result.insert(std::make_pair(it->first,it->second));
-                    }
+            for (auto it = resultElement.begin(); it != resultElement.end(); ++it)
+            {
+                //result[it->first] = result[it->first] + it->second; //adept no realiza la sensibilidad correctamente de esta forma
+                auto f = result.find(it->first);
+                if (f != result.end())
+                {
+                    T suma{};
+                    suma = f->second + it->second;
+                    result.erase(f);
+                    result.insert(std::make_pair(it->first, suma));
+                }
+                else
+                {
+                    result.insert(std::make_pair(it->first, it->second));
+                }
             }
         }
         return result;
     }
 
-    double  getExpiry(){
-        double  maxExpiry = 0.0;
-        for (const auto element : vectorInst){
-            maxExpiry = max(maxExpiry,element->getExpiry());
+    double getExpiry()
+    {
+        double maxExpiry = 0.0;
+        for (const auto element : vectorInst)
+        {
+            maxExpiry = max(maxExpiry, element->getExpiry());
         }
         return maxExpiry;
     }
 };
 
-template<typename T>
-class Greeks{
+template <typename T>
+class Greeks
+{
 public:
-
     optionType tipo;
     T interesAnual;
     T strike;
@@ -190,110 +226,124 @@ public:
 
     Greeks();
 
-    Greeks(optionType tipo,T interesAnual, T strike, T spot, T sigma, double tau):
-            tipo(tipo),interesAnual(interesAnual),strike(strike),spot(spot),sigma(sigma),tau(tau)
+    Greeks(optionType tipo, T interesAnual, T strike, 
+    T spot, T sigma, double tau) : tipo(tipo), interesAnual(interesAnual), 
+    strike(strike), spot(spot), sigma(sigma), tau(tau)
     {
-        factorDescuento = exp(-interesAnual*tau);
-        forward = spot/factorDescuento;
+        factorDescuento = exp(-interesAnual * tau);
+        forward = spot / factorDescuento;
     };
 
-    T vega(){
+    T vega()
+    {
         T vega{};
         T dplus{};
-        T logFK = log(forward/strike);
+        T logFK = log(forward / strike);
         T inverseSigma = 1 / (sigma * sqrt(tau));
-        T medioSigma = 0.5 * sigma*sigma*tau;
-        dplus = inverseSigma*(logFK + medioSigma);
+        T medioSigma = 0.5 * sigma * sigma * tau;
+        dplus = inverseSigma * (logFK + medioSigma);
 
-        T spotSqrTau = spot*sqrt(tau);
-        T distribucionPrima = (1/(sqrt(2*M_PI)))*exp(-(dplus*dplus)/2);
-        vega = spotSqrTau*distribucionPrima;
+        T spotSqrTau = spot * sqrt(tau);
+        T distribucionPrima = (1 / (sqrt(2 * M_PI))) 
+                                            *  exp(-(dplus * dplus) / 2);
+        vega = spotSqrTau * distribucionPrima;
         return vega;
     };
-    T theta(){
+    T theta()
+    {
         T theta{};
         T dplus{};
         T dminus{};
-        T logFK = log(forward/strike);
+        T logFK = log(forward / strike);
         T inverseSigma = 1 / (sigma * sqrt(tau));
-        T medioSigma = 0.5 * sigma*sigma*tau;
+        T medioSigma = 0.5 * sigma * sigma * tau;
 
-        dplus = inverseSigma*(logFK + medioSigma);
-        T distribucionPrima = (1/(sqrt(2*M_PI)))*exp(-(dplus*dplus)/2);
+        dplus = inverseSigma * (logFK + medioSigma);
+        T distribucionPrima = (1 / (sqrt(2 * M_PI))) * exp(-(dplus * dplus) / 2);
 
-        dminus = inverseSigma*(logFK - medioSigma);
+        dminus = inverseSigma * (logFK - medioSigma);
 
         boost::math::normal normalDistribution;
         T distribucionMinus{};
-        switch (tipo){
-            case call:
-                distribucionMinus = normalCDF(dminus);
-                theta = -(spot*distribucionPrima*sigma)/(2*sqrt(tau)) - (interesAnual*strike*exp(-interesAnual*tau)*(distribucionMinus));
-                break;
-            case put:
-                dminus = -dminus; ///correcion para adouble no permite pasar parametro negativo a la funcion
-                distribucionMinus = normalCDF(dminus);
-                theta = -((spot*distribucionPrima*sigma)/(2*sqrt(tau))) + (interesAnual*strike*exp(-interesAnual*tau)*(distribucionMinus));
-                break;
-            default:
-                // cout<<"Error"<<endl;
-                theta = -11111111;
-                break;
+        switch (tipo)
+        {
+        case call:
+            distribucionMinus = normalCDF(dminus);
+            theta = -(spot * distribucionPrima * sigma) / (2 * sqrt(tau))
+             - (interesAnual * strike * exp(-interesAnual * tau) 
+                                                * (distribucionMinus));
+            break;
+        case put:
+    //correcion para adouble no permite pasar parametro negativo a la funcion
+            dminus = -dminus; 
+            distribucionMinus = normalCDF(dminus);
+            theta = -((spot * distribucionPrima * sigma) / (2 * sqrt(tau))) 
+            + (interesAnual * strike * exp(-interesAnual * tau) 
+            * (distribucionMinus));
+            break;
+        default:
+            // cout<<"Error"<<endl;
+            theta = -11111111;
+            break;
         }
         return theta;
     };
-    T delta(){
+    T delta()
+    {
         T delta{};
         T dplus{};
-        T logFK = log(forward/strike);
+        T logFK = log(forward / strike);
         T inverseSigma = 1 / (sigma * sqrt(tau));
-        T medioSigma = 0.5 * sigma*sigma*tau;
-        dplus = inverseSigma*(logFK + medioSigma);
+        T medioSigma = 0.5 * sigma * sigma * tau;
+        dplus = inverseSigma * (logFK + medioSigma);
         boost::math::normal normalDistribution;
         delta = normalCDF(dplus);
-        switch (tipo){
-            case call:
-                break;
-            case put:
-                delta = delta -1;
-                break;
-            default:
-                //cout<<"Error"<<endl;
-                break;
+        switch (tipo)
+        {
+        case call:
+            break;
+        case put:
+            delta = delta - 1;
+            break;
+        default:
+            //cout<<"Error"<<endl;
+            break;
         }
         return delta;
     };
-    T rho(){
+    T rho()
+    {
         T delta{};
         T dplus{};
         T dminus{};
         T rho{};
-        T logFK = log(forward/strike);
+        T logFK = log(forward / strike);
         T inverseSigma = 1 / (sigma * sqrt(tau));
-        T medioSigma = 0.5 * sigma*sigma*tau;
-        dplus = inverseSigma*(logFK + medioSigma);
-        dminus = inverseSigma*(logFK - medioSigma);
+        T medioSigma = 0.5 * sigma * sigma * tau;
+        dplus = inverseSigma * (logFK + medioSigma);
+        dminus = inverseSigma * (logFK - medioSigma);
         boost::math::normal normalDistribution;
 
-        switch (tipo){
-            case call:
-                rho = strike * tau * exp(-interesAnual*tau) * normalCDF(dminus);
-                break;
-            case put:
-                dminus = -dminus;
-                rho = -strike * tau * exp(-interesAnual*tau) * normalCDF(dminus);
-                break;
-            default:
-                //cout<<"Error"<<endl;
-                break;
+        switch (tipo)
+        {
+        case call:
+            rho = strike * tau * exp(-interesAnual * tau) * normalCDF(dminus);
+            break;
+        case put:
+            dminus = -dminus;
+            rho = -strike * tau * exp(-interesAnual * tau) * normalCDF(dminus);
+            break;
+        default:
+            //cout<<"Error"<<endl;
+            break;
         }
         return rho;
     };
-
 };
 
-template<typename T>
-class Call: public OptionGen<T> {
+template <typename T>
+class Call : public OptionGen<T>
+{
 public:
     Greeks<T> griegas;
     int signo;
@@ -306,29 +356,33 @@ public:
     T forward;
     T factorDescuento;
 
-    Call(int signo,T interesAnual, T strike, T spot, T sigma, double tau):
-            signo(signo),interesAnual(interesAnual),strike(strike),spot(spot),sigma(sigma),tau(tau), griegas(call,interesAnual,strike,spot,sigma,tau)
+    Call(int signo, T interesAnual, T strike, T spot, T sigma, double tau) : 
+    signo(signo), interesAnual(interesAnual), strike(strike), spot(spot), 
+    sigma(sigma), tau(tau), 
+    griegas(call, interesAnual, strike, spot, sigma, tau)
     {
-        factorDescuento = exp(-interesAnual*tau);
-        forward = spot/factorDescuento;
+        factorDescuento = exp(-interesAnual * tau);
+        forward = spot / factorDescuento;
     }
     Call();
 
-    map<T,T> evaluate(vector<T> values, double criteria){
-        map<T,T> price{};
-        unsigned long  posicion = getExpiry()*criteria;
-        price.insert(std::make_pair(tau,signo*max(values.at(posicion) - strike,0.0)));
+    map<T, T> evaluate(vector<T> values, double criteria)
+    {
+        map<T, T> price{};
+        unsigned long posicion = getExpiry() * criteria;
+        price.insert(std::make_pair(tau, signo * max(values.at(posicion) - strike, 0.0)));
 
         return price;
     };
-    double getExpiry(){
+    double getExpiry()
+    {
         return this->tau;
     };
 };
 
-
-template<typename T>
-class Put: public OptionGen<T> {
+template <typename T>
+class Put : public OptionGen<T>
+{
 public:
     Greeks<T> griegas;
     int signo;
@@ -341,74 +395,99 @@ public:
     T forward;
     T factorDescuento;
 
-    Put(int signo,T interesAnual, T strike, T spot, T sigma, double tau):
-            signo(signo),interesAnual(interesAnual),strike(strike),spot(spot),sigma(sigma),tau(tau), griegas(put,interesAnual,strike,spot,sigma,tau)
+    Put(int signo, T interesAnual, T strike, T spot, T sigma, double tau) : 
+    signo(signo), interesAnual(interesAnual), strike(strike), spot(spot), 
+    sigma(sigma), tau(tau), griegas(put, interesAnual, strike, spot, sigma, tau)
     {
-        factorDescuento = exp(-interesAnual*tau);
-        forward = spot/factorDescuento;
+        factorDescuento = exp(-interesAnual * tau);
+        forward = spot / factorDescuento;
     }
     Put();
 
-    map<T,T> evaluate(vector<T> values, double criteria){
-        map<T,T> price{};
-        unsigned long posicion = getExpiry()*criteria;
-        price.insert(make_pair(tau,signo*max(strike - values.at(posicion),0.0)));
+    map<T, T> evaluate(vector<T> values, double criteria)
+    {
+        map<T, T> price{};
+        unsigned long posicion = getExpiry() * criteria;
+        price.insert(
+            make_pair(tau, signo * max(strike - values.at(posicion), 0.0))
+            );
 
         return price;
     }
 
-    double getExpiry(){
+    double getExpiry()
+    {
         return this->tau;
     }
 };
-template<typename T>
-class Asian: public Decorator<T>{
+template <typename T>
+class Asian : public Decorator<T>
+{
 public:
     asianType tipo;
 
+    Asian(asianType tipo, shared_ptr<Call<T>> optionCall) : 
+    tipo(tipo), Decorator<T>(optionCall){};
 
-    Asian(asianType tipo,Call<T> *optionCall):tipo(tipo),Decorator<T>(optionCall){};
+    Asian(asianType tipo, shared_ptr<Put<T>> optionPut) : 
+    tipo(tipo), Decorator<T>(optionPut){};
 
-    Asian(asianType tipo,Put<T> *optionPut):tipo(tipo),Decorator<T>(optionPut){};
-
-    map<T,T> evaluate(vector<T> values, double criteria){
-        map<T,T> price{};
+    map<T, T> evaluate(vector<T> values, double criteria)
+    {
+        map<T, T> price{};
         double tau = getExpiry();
-        unsigned long posicion = (tau*criteria);
+        unsigned long posicion = (tau * criteria);
         vector<T> result(values.size());
         auto itpos = values.begin();
-        for (unsigned long i = 0;i<=values.size();++i){
+        for (unsigned long i = 0; i <= values.size(); ++i)
+        {
             result[i] = values[i];
-            if((*itpos) != values[posicion]){
+            if ((*itpos) != values[posicion])
+            {
                 ++itpos;
             }
         }
-        try {
-            if (!values.empty()) {
-                if (tipo == max_) {
+        try
+        {
+            if (!values.empty())
+            {
+                if (tipo == max_)
+                {
                     auto it = max_element(values.begin(), itpos);
                     result[posicion] = *it;
-                } else if (tipo == min_) {
+                }
+                else if (tipo == min_)
+                {
                     auto it = min_element(values.begin(), itpos);
                     result[posicion] = *it;
-                } else if (tipo == avg_) {
+                }
+                else if (tipo == avg_)
+                {
                     T init = 0.0;
-                    auto it = std::accumulate(values.begin(), itpos, init) / values.size();
+                    auto it = std::accumulate(values.begin(), itpos, init) 
+                    / values.size();
                     result[posicion] = it;
-                } else {
+                }
+                else
+                {
                     __throw_bad_exception();
                 }
-            } else {
+            }
+            else
+            {
                 __throw_bad_exception();
             }
-        }catch ( exception& e){
+        }
+        catch (exception &e)
+        {
             cout << "ERROR" << endl;
         }
 
-        price = Decorator<T>::innerOption->evaluate(result,criteria);
+        price = Decorator<T>::innerOption->evaluate(result, criteria);
         return price;
     };
-    double getExpiry(){
+    double getExpiry()
+    {
         return Decorator<T>::innerOption->getExpiry();
     };
 };

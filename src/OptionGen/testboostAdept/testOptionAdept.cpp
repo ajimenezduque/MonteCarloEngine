@@ -99,10 +99,10 @@ BOOST_AUTO_TEST_CASE(Test_OptionGenAdept_Portfolio){
     for(int i = 0;i < vencimientos.size();++i){
         for(int j = 0; j < strikes.size();++j){
             if(par%2 == 0){
-                Call<adouble> *option = new Call<adouble>(1,0.08,strikes[j],305,0.25,vencimientos[i]);
+                auto option = make_shared<Call<adouble>>(1,0.08,strikes[j],305,0.25,vencimientos[i]);
                 myOptions1.add(option);
             }else{
-                Put<adouble> *option = new Put<adouble>(1,0.08,strikes[j],305,0.25,vencimientos[i]);
+                auto option  = make_shared<Put<adouble>>(1,0.08,strikes[j],305,0.25,vencimientos[i]);
                 myOptions1.add(option);
             }
             par++;
@@ -130,91 +130,91 @@ BOOST_AUTO_TEST_CASE(Test_OptionGenAdept_Portfolio){
     cout<<"Valoracion Portfolio: "<<valoracionBase<<endl;
 
 }
-BOOST_AUTO_TEST_CASE(Test_OptionGenAdept_Opcion){
-    BOOST_TEST_MESSAGE("Se ejecuta test de valoración para una opción");
-    cout<<"///************TEST****************////"<<endl;
+// BOOST_AUTO_TEST_CASE(Test_OptionGenAdept_Opcion){
+//     BOOST_TEST_MESSAGE("Se ejecuta test de valoración para una opción");
+//     cout<<"///************TEST****************////"<<endl;
 
-    Stack stack;
+//     Stack stack;
 
-    adouble interes = 0.08;
-    adouble spot = 305.0;
-    adouble sigma = 0.25;
-    adouble strike = 300;
-    map<adouble,adouble> sigma_map;
-    sigma_map[0.1] = 0.25;
-    sigma_map[0.2] = 0.30;
-    sigma_map[0.3] = 0.33;
-    sigma_map [0.4] = 0.35;
-    unsigned long paths = 10000;
-    unsigned long samples = 365;
-
-
-    Call<adouble> opcionCallVega(1,interes, strike, spot,sigma, 4.0 / 12.0);
-    stack.new_recording();
-
-    auto start = std::chrono::high_resolution_clock::now();
-    adouble valoracionBase = SimpleMonteCarlo2(opcionCallVega,spot,sigma_map,interes,paths,samples);
-    valoracionBase.set_gradient(1.0);
-    stack.compute_adjoint();
-
-    auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> diff_seconds = end-start;
-    cout << "Tiempo de cálculo: "<<diff_seconds.count()<<" segundos"<< endl;
-
-    cout<<"Delta: "<<spot.get_gradient()<<endl;
-    cout<<"Vega: "<<sigma_map[0.1].get_gradient()<<endl;
-    cout<<"Vega: "<<sigma_map[0.2].get_gradient()<<endl;
-    cout<<"Vega: "<<sigma_map[0.3].get_gradient()<<endl;
-    cout<<"Vega: "<<sigma_map[0.4].get_gradient()<<endl;
-    cout<<"Rho: "<<interes.get_gradient()<<endl;
-
-    cout<<"Valoracion Opcion: "<<valoracionBase<<endl;
-}
-BOOST_AUTO_TEST_CASE(Test_OptionGenAdept_OpcionBS){
-    BOOST_TEST_MESSAGE("Se ejecuta test opcion Black-Scholes, se comprueba valoración de BS y MC, así como sensibilidades análiticas y mediante DA ");
-    cout<<"///************TEST****************////"<<endl;
-    Stack stack;
-
-    adouble interes = 0.08;
-    adouble spot = 305.0;
-    adouble sigma = 0.25;
-    adouble strike = 300;
-    map<adouble,adouble> sigma_map;
-    sigma_map[0.5] = sigma;
-    sigma_map[1.0] = sigma;
-    sigma_map[2.0] = sigma;
-    sigma_map [2.5] = sigma;
-    unsigned long paths = 10000;
-    unsigned long samples = 365;
+//     adouble interes = 0.08;
+//     adouble spot = 305.0;
+//     adouble sigma = 0.25;
+//     adouble strike = 300;
+//     map<adouble,adouble> sigma_map;
+//     sigma_map[0.1] = 0.25;
+//     sigma_map[0.2] = 0.30;
+//     sigma_map[0.3] = 0.33;
+//     sigma_map [0.4] = 0.35;
+//     unsigned long paths = 10000;
+//     unsigned long samples = 365;
 
 
-    Call<adouble> opcionCallVega(1,interes, strike, spot,sigma, 2.5);
-    cout<<"Delta: "<<opcionCallVega.griegas.delta()<<endl;
-    cout<<"Vega: "<<opcionCallVega.griegas.vega()<<endl;
-    cout<<"Rho: "<<opcionCallVega.griegas.rho()<<endl;
-    OptionBS <adouble> opcionBS (call,interes,strike,spot,sigma, 2.5);
-    cout<<"OptionBS Price:" <<opcionBS.price()<<endl;
+//     Call<adouble> opcionCallVega(1,interes, strike, spot,sigma, 4.0 / 12.0);
+//     stack.new_recording();
 
-    stack.new_recording();
+//     auto start = std::chrono::high_resolution_clock::now();
+//     adouble valoracionBase = SimpleMonteCarlo2(opcionCallVega,spot,sigma_map,interes,paths,samples);
+//     valoracionBase.set_gradient(1.0);
+//     stack.compute_adjoint();
 
-    auto start = std::chrono::high_resolution_clock::now();
-    adouble valoracionBase = SimpleMonteCarlo2(opcionCallVega,spot,sigma_map,interes,paths,samples);
-    valoracionBase.set_gradient(1.0);
-    stack.compute_adjoint();
+//     auto end = std::chrono::high_resolution_clock::now();
+//     std::chrono::duration<double> diff_seconds = end-start;
+//     cout << "Tiempo de cálculo: "<<diff_seconds.count()<<" segundos"<< endl;
 
-    auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> diff_seconds = end-start;
-    cout << "Tiempo de cálculo: "<<diff_seconds.count()<<" segundos"<< endl;
+//     cout<<"Delta: "<<spot.get_gradient()<<endl;
+//     cout<<"Vega: "<<sigma_map[0.1].get_gradient()<<endl;
+//     cout<<"Vega: "<<sigma_map[0.2].get_gradient()<<endl;
+//     cout<<"Vega: "<<sigma_map[0.3].get_gradient()<<endl;
+//     cout<<"Vega: "<<sigma_map[0.4].get_gradient()<<endl;
+//     cout<<"Rho: "<<interes.get_gradient()<<endl;
 
-    cout<<"Delta: "<<spot.get_gradient()<<endl;
-    cout<<"Vega: "<<sigma_map[0.5].get_gradient()<<endl;
-    cout<<"Vega: "<<sigma_map[1.0].get_gradient()<<endl;
-    cout<<"Vega: "<<sigma_map[2.0].get_gradient()<<endl;
-    cout<<"Vega: "<<sigma_map[2.5].get_gradient()<<endl;
-    cout<<"Rho: "<<interes.get_gradient()<<endl;
+//     cout<<"Valoracion Opcion: "<<valoracionBase<<endl;
+// }
+// BOOST_AUTO_TEST_CASE(Test_OptionGenAdept_OpcionBS){
+//     BOOST_TEST_MESSAGE("Se ejecuta test opcion Black-Scholes, se comprueba valoración de BS y MC, así como sensibilidades análiticas y mediante DA ");
+//     cout<<"///************TEST****************////"<<endl;
+//     Stack stack;
 
-    cout<<"Valoracion Opcion: "<<valoracionBase<<endl;
-}
+//     adouble interes = 0.08;
+//     adouble spot = 305.0;
+//     adouble sigma = 0.25;
+//     adouble strike = 300;
+//     map<adouble,adouble> sigma_map;
+//     sigma_map[0.5] = sigma;
+//     sigma_map[1.0] = sigma;
+//     sigma_map[2.0] = sigma;
+//     sigma_map [2.5] = sigma;
+//     unsigned long paths = 10000;
+//     unsigned long samples = 365;
+
+
+//     Call<adouble> opcionCallVega(1,interes, strike, spot,sigma, 2.5);
+//     cout<<"Delta: "<<opcionCallVega.griegas.delta()<<endl;
+//     cout<<"Vega: "<<opcionCallVega.griegas.vega()<<endl;
+//     cout<<"Rho: "<<opcionCallVega.griegas.rho()<<endl;
+//     OptionBS <adouble> opcionBS (call,interes,strike,spot,sigma, 2.5);
+//     cout<<"OptionBS Price:" <<opcionBS.price()<<endl;
+
+//     stack.new_recording();
+
+//     auto start = std::chrono::high_resolution_clock::now();
+//     adouble valoracionBase = SimpleMonteCarlo2(opcionCallVega,spot,sigma_map,interes,paths,samples);
+//     valoracionBase.set_gradient(1.0);
+//     stack.compute_adjoint();
+
+//     auto end = std::chrono::high_resolution_clock::now();
+//     std::chrono::duration<double> diff_seconds = end-start;
+//     cout << "Tiempo de cálculo: "<<diff_seconds.count()<<" segundos"<< endl;
+
+//     cout<<"Delta: "<<spot.get_gradient()<<endl;
+//     cout<<"Vega: "<<sigma_map[0.5].get_gradient()<<endl;
+//     cout<<"Vega: "<<sigma_map[1.0].get_gradient()<<endl;
+//     cout<<"Vega: "<<sigma_map[2.0].get_gradient()<<endl;
+//     cout<<"Vega: "<<sigma_map[2.5].get_gradient()<<endl;
+//     cout<<"Rho: "<<interes.get_gradient()<<endl;
+
+//     cout<<"Valoracion Opcion: "<<valoracionBase<<endl;
+// }
 BOOST_AUTO_TEST_CASE(Test_OptionGenAdept_Asian){
     BOOST_TEST_MESSAGE("Se ejecuta test opción Asiatica");
     cout<<"///************TEST****************////"<<endl;
@@ -232,11 +232,17 @@ BOOST_AUTO_TEST_CASE(Test_OptionGenAdept_Asian){
     unsigned long paths = 10000;
     unsigned long samples = 365;
 
-    Asian<adouble> optionAsian1(avg_,new Call<adouble>(1,0.08,300.0,305.0,0.25,4));
-    Asian<adouble> *optionAsian2 = new Asian<adouble>(max_,new Call<adouble>(1,0.08,300.0,305.0,0.25,4));
-    Asian<adouble> *optionAsian3 = new Asian<adouble>(min_,new Call<adouble>(1,0.08,300.0,305.0,0.25,4));
+    auto optionCall = make_shared<Call<adouble>>(1,0.08,300.0,305.0,0.25,4);
+    auto optionAsian1 = make_shared<Asian<adouble>>(avg_, optionCall);
+    auto optionCallMax = make_shared<Call<adouble>>(1,0.08,300.0,305.0,0.25,4);
+    auto optionAsian2 = make_shared<Asian<adouble>>(max_, optionCallMax);
+    auto optionCallmin = make_shared<Call<adouble>>(1,0.08,300.0,305.0,0.25,4);
+    auto optionAsian3 = make_shared<Asian<adouble>>(min_, optionCallmin);
+    //Asian<adouble> optionAsian1(avg_,new Call<adouble>(1,0.08,300.0,305.0,0.25,4));
+    //Asian<adouble> *optionAsian2 = new Asian<adouble>(max_,new Call<adouble>(1,0.08,300.0,305.0,0.25,4));
+    //Asian<adouble> *optionAsian3 = new Asian<adouble>(min_,new Call<adouble>(1,0.08,300.0,305.0,0.25,4));
     Composite<adouble> myOptions1;
-    myOptions1.add(&optionAsian1);
+    myOptions1.add(optionAsian1);
     myOptions1.add(optionAsian2);
     myOptions1.add(optionAsian3);
     stack.new_recording();

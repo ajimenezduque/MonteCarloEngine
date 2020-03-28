@@ -97,10 +97,10 @@ BOOST_AUTO_TEST_CASE(Test_OptionGen_Portfolio){
      for(int i = 0;i < vencimientos.size();++i){
          for(int j = 0; j < strikes.size();++j){
              if(par%2 == 0){
-                 Call<double> *option = new Call<double>(1,interes,strikes[j],spot,sigma,vencimientos[i]);
+                 auto option = make_shared<Call<double>>(1,interes,strikes[j],spot,sigma,vencimientos[i]);
                  myOptions1.add(option);
              }else{
-                 Put<double> *option = new Put<double>(1,interes,strikes[j],spot,sigma,vencimientos[i]);
+                 auto option = make_shared<Put<double>>(1,interes,strikes[j],spot,sigma,vencimientos[i]);
                  myOptions1.add(option);
              }
                  par++;
@@ -140,123 +140,123 @@ BOOST_AUTO_TEST_CASE(Test_OptionGen_Portfolio){
     cout << "Tiempo de cálculo: "<<diff_seconds.count()<<" segundos"<< endl;
 
 }
-BOOST_AUTO_TEST_CASE(Test_OptionGen_Opcion){
-    BOOST_TEST_MESSAGE("Se ejecuta test de valoración para una única opción.");
-    cout<<"///************TEST****************////"<<endl;
+// BOOST_AUTO_TEST_CASE(Test_OptionGen_Opcion){
+//     BOOST_TEST_MESSAGE("Se ejecuta test de valoración para una única opción.");
+//     cout<<"///************TEST****************////"<<endl;
 
-    double interes = 0.08;
-    double spot = 305;
-    double strike = 300;
-    double sigma = 0.25;
-    map<double,double> sigma_map;
-    sigma_map[0.1] = 0.25;
-    sigma_map[0.2] = 0.30;
-    sigma_map[0.3] = 0.33;
-    sigma_map [0.4] = 0.35;
-    unsigned long paths = 10000;
-    unsigned long samples = 365;
+//     double interes = 0.08;
+//     double spot = 305;
+//     double strike = 300;
+//     double sigma = 0.25;
+//     map<double,double> sigma_map;
+//     sigma_map[0.1] = 0.25;
+//     sigma_map[0.2] = 0.30;
+//     sigma_map[0.3] = 0.33;
+//     sigma_map [0.4] = 0.35;
+//     unsigned long paths = 10000;
+//     unsigned long samples = 365;
 
-    ///Prueba calculo de sensibilidades con unica opcion
+//     ///Prueba calculo de sensibilidades con unica opcion
 
-    Call<double> opcionCallVega(1,interes, strike, spot, sigma, 4.0 / 12.0);
+//     Call<double> opcionCallVega(1,interes, strike, spot, sigma, 4.0 / 12.0);
 
-    auto start = std::chrono::high_resolution_clock::now();
-    double valoracionBase = SimpleMonteCarlo2(opcionCallVega,spot,sigma_map,interes,paths,samples);
+//     auto start = std::chrono::high_resolution_clock::now();
+//     double valoracionBase = SimpleMonteCarlo2(opcionCallVega,spot,sigma_map,interes,paths,samples);
 
-    double deltaPrice = 0.00001;
+//     double deltaPrice = 0.00001;
 
-    double bumpedSpot = SimpleMonteCarlo2(opcionCallVega,spot + deltaPrice,sigma_map,interes,paths,samples);
+//     double bumpedSpot = SimpleMonteCarlo2(opcionCallVega,spot + deltaPrice,sigma_map,interes,paths,samples);
 
-    sigma_map[0.1] = sigma_map[0.1] + deltaPrice;
-    double bumpedVol = SimpleMonteCarlo2(opcionCallVega,spot,sigma_map,interes,paths,samples);
-    sigma_map[0.1] = 0.25;
-    sigma_map[0.2] = sigma_map[0.2] + deltaPrice;
-    double bumpedVol2 = SimpleMonteCarlo2(opcionCallVega,spot,sigma_map,interes,paths,samples);
-    sigma_map[0.2] = 0.30;
-    sigma_map[0.3] = sigma_map[0.3] + deltaPrice;
-    double bumpedVol3 = SimpleMonteCarlo2(opcionCallVega,spot,sigma_map,interes,paths,samples);
-    sigma_map[0.3] = 0.33;
-    sigma_map[0.4] = sigma_map[0.4] + deltaPrice;
-    double bumpedVol4 = SimpleMonteCarlo2(opcionCallVega,spot,sigma_map,interes,paths,samples);
-    sigma_map [0.4] = 0.35;
+//     sigma_map[0.1] = sigma_map[0.1] + deltaPrice;
+//     double bumpedVol = SimpleMonteCarlo2(opcionCallVega,spot,sigma_map,interes,paths,samples);
+//     sigma_map[0.1] = 0.25;
+//     sigma_map[0.2] = sigma_map[0.2] + deltaPrice;
+//     double bumpedVol2 = SimpleMonteCarlo2(opcionCallVega,spot,sigma_map,interes,paths,samples);
+//     sigma_map[0.2] = 0.30;
+//     sigma_map[0.3] = sigma_map[0.3] + deltaPrice;
+//     double bumpedVol3 = SimpleMonteCarlo2(opcionCallVega,spot,sigma_map,interes,paths,samples);
+//     sigma_map[0.3] = 0.33;
+//     sigma_map[0.4] = sigma_map[0.4] + deltaPrice;
+//     double bumpedVol4 = SimpleMonteCarlo2(opcionCallVega,spot,sigma_map,interes,paths,samples);
+//     sigma_map [0.4] = 0.35;
 
-    double bumpedInt = SimpleMonteCarlo2(opcionCallVega,spot,sigma_map,interes + deltaPrice,paths,samples);
+//     double bumpedInt = SimpleMonteCarlo2(opcionCallVega,spot,sigma_map,interes + deltaPrice,paths,samples);
 
-    auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> diff_seconds=end-start;
-    cout<<"Delta Bumped: "<< ((bumpedSpot - valoracionBase)/deltaPrice)<<endl;
-    cout<<"Vega Bumped: "<< ((bumpedVol - valoracionBase)/deltaPrice)<<endl;
-    cout<<"Vega Bumped2: "<< ((bumpedVol2 - valoracionBase)/deltaPrice)<<endl;
-    cout<<"Vega Bumped3: "<< ((bumpedVol3 - valoracionBase)/deltaPrice)<<endl;
-    cout<<"Vega Bumped4: "<< ((bumpedVol4 - valoracionBase)/deltaPrice)<<endl;
+//     auto end = std::chrono::high_resolution_clock::now();
+//     std::chrono::duration<double> diff_seconds=end-start;
+//     cout<<"Delta Bumped: "<< ((bumpedSpot - valoracionBase)/deltaPrice)<<endl;
+//     cout<<"Vega Bumped: "<< ((bumpedVol - valoracionBase)/deltaPrice)<<endl;
+//     cout<<"Vega Bumped2: "<< ((bumpedVol2 - valoracionBase)/deltaPrice)<<endl;
+//     cout<<"Vega Bumped3: "<< ((bumpedVol3 - valoracionBase)/deltaPrice)<<endl;
+//     cout<<"Vega Bumped4: "<< ((bumpedVol4 - valoracionBase)/deltaPrice)<<endl;
 
-    cout<<"Rho Bumped: "<< ((bumpedInt - valoracionBase)/deltaPrice)<<endl;
-    cout<<"Valoracion Opción: "<<valoracionBase<<endl;
-    cout << "Tiempo de cálculo: "<<diff_seconds.count()<<" segundos"<< endl;
+//     cout<<"Rho Bumped: "<< ((bumpedInt - valoracionBase)/deltaPrice)<<endl;
+//     cout<<"Valoracion Opción: "<<valoracionBase<<endl;
+//     cout << "Tiempo de cálculo: "<<diff_seconds.count()<<" segundos"<< endl;
 
-}
-BOOST_AUTO_TEST_CASE(Test_OptionGen_OpcionBS){
-    BOOST_TEST_MESSAGE("Se ejecuta test opcion Black-Scholes, se comprueba valoración de BS y MC, así como sensibilidades análiticas y mediante DA");
-    cout<<"///************TEST****************////"<<endl;
-    double interes = 0.08;
-    double spot = 305;
-    double strike = 300;
-    double sigma = 0.25;
-    map<double,double> sigma_map;
-    sigma_map[0.5] = sigma;
-    sigma_map[1.0] = sigma;
-    sigma_map[2.0] = sigma;
-    sigma_map[2.5] = sigma;
-    unsigned long paths = 10000;
-    unsigned long samples = 365;
+// }
+// BOOST_AUTO_TEST_CASE(Test_OptionGen_OpcionBS){
+//     BOOST_TEST_MESSAGE("Se ejecuta test opcion Black-Scholes, se comprueba valoración de BS y MC, así como sensibilidades análiticas y mediante DA");
+//     cout<<"///************TEST****************////"<<endl;
+//     double interes = 0.08;
+//     double spot = 305;
+//     double strike = 300;
+//     double sigma = 0.25;
+//     map<double,double> sigma_map;
+//     sigma_map[0.5] = sigma;
+//     sigma_map[1.0] = sigma;
+//     sigma_map[2.0] = sigma;
+//     sigma_map[2.5] = sigma;
+//     unsigned long paths = 10000;
+//     unsigned long samples = 365;
 
-    ///Prueba calculo de sensibilidades con unica opcion
+//     ///Prueba calculo de sensibilidades con unica opcion
 
-    Call<double> opcionCallVega(1,interes, strike, spot, sigma, 2.5);
-    cout<<"Delta: "<<opcionCallVega.griegas.delta()<<endl;
-    cout<<"Vega: "<<opcionCallVega.griegas.vega()<<endl;
-    cout<<"Rho: "<<opcionCallVega.griegas.rho()<<endl;
-    OptionBS <double> opcionBS (call,interes,strike,spot,sigma, 2.5);
-    cout<<"OptionBS Price:" <<opcionBS.price()<<endl;
+//     Call<double> opcionCallVega(1,interes, strike, spot, sigma, 2.5);
+//     cout<<"Delta: "<<opcionCallVega.griegas.delta()<<endl;
+//     cout<<"Vega: "<<opcionCallVega.griegas.vega()<<endl;
+//     cout<<"Rho: "<<opcionCallVega.griegas.rho()<<endl;
+//     OptionBS <double> opcionBS (call,interes,strike,spot,sigma, 2.5);
+//     cout<<"OptionBS Price:" <<opcionBS.price()<<endl;
 
-    auto start = std::chrono::high_resolution_clock::now();
-    double valoracionBase = SimpleMonteCarlo2(opcionCallVega,spot,sigma_map,interes,paths,samples);
+//     auto start = std::chrono::high_resolution_clock::now();
+//     double valoracionBase = SimpleMonteCarlo2(opcionCallVega,spot,sigma_map,interes,paths,samples);
 
-    double deltaPrice = 0.00001;
+//     double deltaPrice = 0.00001;
 
-    double bumpedSpot = SimpleMonteCarlo2(opcionCallVega,spot + deltaPrice,sigma_map,interes,paths,samples);
+//     double bumpedSpot = SimpleMonteCarlo2(opcionCallVega,spot + deltaPrice,sigma_map,interes,paths,samples);
 
-    ///Alteracion del valor para cada una de las volatilidades del mapa.
-    sigma_map[0.5] = sigma_map[0.5] + deltaPrice;
-    double bumpedVol = SimpleMonteCarlo2(opcionCallVega,spot,sigma_map,interes,paths,samples);
-    sigma_map[0.5] = sigma;
-    sigma_map[1.0] = sigma_map[1.0] + deltaPrice;
-    double bumpedVol2 = SimpleMonteCarlo2(opcionCallVega,spot,sigma_map,interes,paths,samples);
-    sigma_map[1.0] = sigma;
-    sigma_map[2.0] = sigma_map[2.0] + deltaPrice;
-    double bumpedVol3 = SimpleMonteCarlo2(opcionCallVega,spot,sigma_map,interes,paths,samples);
-    sigma_map[2.0] = sigma;
-    sigma_map[2.5] = sigma_map[2.5] + deltaPrice;
-    double bumpedVol4 = SimpleMonteCarlo2(opcionCallVega,spot,sigma_map,interes,paths,samples);
-    sigma_map [2.5] = sigma;
+//     ///Alteracion del valor para cada una de las volatilidades del mapa.
+//     sigma_map[0.5] = sigma_map[0.5] + deltaPrice;
+//     double bumpedVol = SimpleMonteCarlo2(opcionCallVega,spot,sigma_map,interes,paths,samples);
+//     sigma_map[0.5] = sigma;
+//     sigma_map[1.0] = sigma_map[1.0] + deltaPrice;
+//     double bumpedVol2 = SimpleMonteCarlo2(opcionCallVega,spot,sigma_map,interes,paths,samples);
+//     sigma_map[1.0] = sigma;
+//     sigma_map[2.0] = sigma_map[2.0] + deltaPrice;
+//     double bumpedVol3 = SimpleMonteCarlo2(opcionCallVega,spot,sigma_map,interes,paths,samples);
+//     sigma_map[2.0] = sigma;
+//     sigma_map[2.5] = sigma_map[2.5] + deltaPrice;
+//     double bumpedVol4 = SimpleMonteCarlo2(opcionCallVega,spot,sigma_map,interes,paths,samples);
+//     sigma_map [2.5] = sigma;
 
-    double bumpedInt = SimpleMonteCarlo2(opcionCallVega,spot,sigma_map,interes + deltaPrice,paths,samples);
+//     double bumpedInt = SimpleMonteCarlo2(opcionCallVega,spot,sigma_map,interes + deltaPrice,paths,samples);
 
-    auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> diff_seconds=end-start;
-    cout<<"Delta Bumped: "<< ((bumpedSpot - valoracionBase)/deltaPrice)<<endl;
+//     auto end = std::chrono::high_resolution_clock::now();
+//     std::chrono::duration<double> diff_seconds=end-start;
+//     cout<<"Delta Bumped: "<< ((bumpedSpot - valoracionBase)/deltaPrice)<<endl;
 
-    cout<<"Vega Bumped: "<< ((bumpedVol - valoracionBase)/deltaPrice)<<endl;
-    cout<<"Vega Bumped2: "<< ((bumpedVol2 - valoracionBase)/deltaPrice)<<endl;
-    cout<<"Vega Bumped3: "<< ((bumpedVol3 - valoracionBase)/deltaPrice)<<endl;
-    cout<<"Vega Bumped4: "<< ((bumpedVol4 - valoracionBase)/deltaPrice)<<endl;
+//     cout<<"Vega Bumped: "<< ((bumpedVol - valoracionBase)/deltaPrice)<<endl;
+//     cout<<"Vega Bumped2: "<< ((bumpedVol2 - valoracionBase)/deltaPrice)<<endl;
+//     cout<<"Vega Bumped3: "<< ((bumpedVol3 - valoracionBase)/deltaPrice)<<endl;
+//     cout<<"Vega Bumped4: "<< ((bumpedVol4 - valoracionBase)/deltaPrice)<<endl;
 
-    cout<<"Rho Bumped: "<< ((bumpedInt - valoracionBase)/deltaPrice)<<endl;
+//     cout<<"Rho Bumped: "<< ((bumpedInt - valoracionBase)/deltaPrice)<<endl;
 
-    cout<<"Valoracion OptionBS por MC: "<<valoracionBase<<endl;
-    cout << "Tiempo de cálculo: "<<diff_seconds.count()<<" segundos"<< endl;
+//     cout<<"Valoracion OptionBS por MC: "<<valoracionBase<<endl;
+//     cout << "Tiempo de cálculo: "<<diff_seconds.count()<<" segundos"<< endl;
 
-}
+// }
 
 BOOST_AUTO_TEST_CASE(Test_OptionGen_Asian){
     BOOST_TEST_MESSAGE("Se ejecuta test Asian");
@@ -274,11 +274,17 @@ BOOST_AUTO_TEST_CASE(Test_OptionGen_Asian){
     unsigned long samples = 365;
 
     ///Prueba calculo con opciones Asiaticas
-    Asian<double> optionAsian1(avg_,new Call<double>(1,0.08,300.0,305.0,0.25,4));
-    Asian<double> *optionAsian2 = new Asian<double>(max_,new Call<double>(1,0.08,300.0,305.0,0.25,4));
-    Asian<double> *optionAsian3 = new Asian<double>(min_,new Call<double>(1,0.08,300.0,305.0,0.25,4));
+    // Asian<double> optionAsian1(avg_,new Call<double>(1,0.08,300.0,305.0,0.25,4));
+    // Asian<double> *optionAsian2 = new Asian<double>(max_,new Call<double>(1,0.08,300.0,305.0,0.25,4));
+    // Asian<double> *optionAsian3 = new Asian<double>(min_,new Call<double>(1,0.08,300.0,305.0,0.25,4));
+        auto optionCall = make_shared<Call<double>>(1,0.08,300.0,305.0,0.25,4);
+    auto optionAsian1 = make_shared<Asian<double>>(avg_, optionCall);
+    auto optionCallMax = make_shared<Call<double>>(1,0.08,300.0,305.0,0.25,4);
+    auto optionAsian2 = make_shared<Asian<double>>(max_, optionCallMax);
+    auto optionCallmin = make_shared<Call<double>>(1,0.08,300.0,305.0,0.25,4);
+    auto optionAsian3 = make_shared<Asian<double>>(min_, optionCallmin);
     Composite<double> myOptions1;
-    myOptions1.add(&optionAsian1);
+    myOptions1.add(optionAsian1);
     myOptions1.add(optionAsian2);
     myOptions1.add(optionAsian3);
     double valoracionAsian = SimpleMonteCarlo2(myOptions1,spot,sigma_map,interes,paths,samples);
